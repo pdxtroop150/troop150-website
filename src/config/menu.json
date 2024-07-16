@@ -13,6 +13,10 @@
       "url": "/contact"
     },
     {
+      "name": "Organization",
+      "url": "/organization"
+    },
+    {
       "name": "Pages",
       "url": "",
       "hasChildren": true,

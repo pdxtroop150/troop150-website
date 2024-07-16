@@ -20,7 +20,7 @@ Favicons are the little icon next to the title of the page
     ```
 3. Make sure the url ending has no capitals and uses hyphens in place of spaces
 4. In the content folder there should be a folder called pages
-5. In the pages folder create a new .md file with the same name form as the url above (e.g. `your-page.md`) and make sure it this at the top
+5. In the pages folder create a new .md file with the same name form as the url above (e.g. `your-page.md`) and make sure it this at the top (make sure that you don't have any triple apostrophes as well as that you dont have the text indented)
     ```
     ---
     title: "Your Page title"
