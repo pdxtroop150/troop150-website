@@ -40,7 +40,11 @@
         {
           "name":"History",
           "url":"/history"
-        }
+        },
+        {
+          "name":"Past Campouts",
+          "url":"/campouts"
+        }  
       ]
     }
   ],
