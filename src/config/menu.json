@@ -1,16 +1,16 @@
 {
   "main": [
     {
-      "name": "Home",
-      "url": "/"
-    },
-    {
-      "name": "About",
+      "name": "Who we are",
       "url": "/about"
     },
     {
-      "name": "Contact",
-      "url": "/contact"
+      "name": "What we do",
+      "url": "/what-we-do"
+    },
+    {
+      "name": "Join",
+      "url": "/join"
     },
     {
       "name": "Pages",
