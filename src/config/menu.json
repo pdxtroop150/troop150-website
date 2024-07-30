@@ -40,7 +40,15 @@
         {
           "name": "Privacy Policy",
           "url": "/privacy-policy"
-        }
+        },
+        {
+          "name":"History",
+          "url":"/history"
+        },
+        {
+          "name":"Past Campouts",
+          "url":"/campouts"
+        }  
       ]
     }
   ],
