@@ -2,7 +2,7 @@
 title: "Summer camp 2024"
 description: "meta description"
 date: 2024-08-10
-image: "/images/posts/summer_camp_2024_route_of_the_hiawatha.jpg"
+image: "/images/posts/summer_camp_2024_route_of_the_hiawatha.png"
 categories: ["Summer camp"]
 authors: ["Elliot Douglas"]
 tags: ["Campouts", "Summer camp"]
