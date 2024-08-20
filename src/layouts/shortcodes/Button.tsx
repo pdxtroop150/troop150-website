@@ -1,5 +1,4 @@
 import React from "react";
-import type Tab from "./Tab";
 
 const Button = ({
   label,
