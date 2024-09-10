@@ -5,6 +5,10 @@
       "url": "/about"
     },
     {
+      "name": "Calendar",
+      "url": "/calendar"
+    },
+    {
       "name": "What we do",
       "url": "/what-we-do"
     },

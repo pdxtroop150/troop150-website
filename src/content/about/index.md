@@ -1,7 +1,7 @@
 ---
-title: "I’m John Doe, A content writer based in LDN, Currently at Bookworm"
+title: "Calendar"
 meta_title: "About"
-image: "/images/author.png"
+
 draft: false
 
 what_i_do:

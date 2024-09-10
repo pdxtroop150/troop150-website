@@ -168,12 +168,48 @@ const { title, meta_title, description, image, noindex, canonical } =
       }`}
     />
     <meta name="twitter:card" content="summary_large_image" />
+    <!-- Calendar embed -->
+    <script type='importmap'>
+      {
+        "imports": {
+          "@fullcalendar/core": "https://cdn.skypack.dev/@fullcalendar/core@6.1.15",
+          "@fullcalendar/daygrid": "https://cdn.skypack.dev/@fullcalendar/daygrid@6.1.15",
+          "@fullcalendar/icalendar": "https://cdn.skypack.dev/@fullcalendar/icalendar@6.1.15"
+        }
+      }
+    </script>
+    <script type='module'>
+      import { Calendar } from '@fullcalendar/core'
+      import dayGridPlugin from '@fullcalendar/daygrid'
+      import iCalendarPlugin from '@fullcalendar/icalendar'
+
+      document.addEventListener('DOMContentLoaded', function() {
+        const url = 'https://corsproxy.io/?' + encodeURIComponent('https://api.scouting.org/advancements/events/calendar/10400')
+        const calendarEl = document.getElementById('calendar')
+        const calendar = new Calendar(calendarEl, {
+          plugins: [dayGridPlugin, iCalendarPlugin],
+          headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+          },
+          events: {
+            url,
+            format: 'ics'
+          }
+        })
+        calendar.render()
+      })
+    </script>
+  <!-- end -->
   </head>
   <body>
+    <div id="calendar"> </div>
     <TwSizeIndicator />
     <Header />
     <main id="main-content" class="min-h-[60vh]">
       <slot />
+      
     </main>
     <Footer />
   </body>
