@@ -22,6 +22,14 @@
          "url": "/merit-badge-counselors"
         },
         {
+          "name": "Roster",
+          "url": "https://www.jotform.com/table/72816272673058"
+         },
+        {
+          "name": "Forms",
+          "url": "/forms"
+         },
+        {
           "name":"History",
           "url":"/history"
         },
