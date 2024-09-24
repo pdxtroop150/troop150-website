@@ -36,6 +36,10 @@
         {
           "name":"Eagle Scouts",
           "url":"/eagle-scouts"
+        },
+        {
+          "name":"Gear",
+          "url":"/gear"
         }  
       ]
     }
