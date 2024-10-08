@@ -3,7 +3,7 @@ title: "Merit Badge Counselors"
 description: "this is meta description"
 draft: false
 ---
-Are you wanting to complete a specific merit badge, but don't know who to ask? Well, thats why were here. We will give you the information you need to succeed.
+Are you wanting to complete a specific merit badge, but don't know who to ask? Well, that's why were here. We will give you the information you need to succeed.
  
 
 
@@ -153,7 +153,7 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 
 
 
-*Emergency Preparedness and Lifesaving are both Eagle Required, but you only Have to do one of them. 
+*Emergency Preparedness and Lifesaving are both Eagle Required, but you only have to do one of them. 
 
 *Environmental Science and Sustainability are both Eagle Required, but you only have to do one of them.
 
