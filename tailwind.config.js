@@ -65,6 +65,17 @@ module.exports = {
         primary: [fontPrimary, fontPrimaryType],
         secondary: [fontSecondary, fontSecondaryType],
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            // Troop 150: Items felt too spaced out vertically
+            li: {
+              "margin-top": 0,
+              "margin-bottom": 0,
+            }
+          }
+        }
+      }
     },
   },
   plugins: [
