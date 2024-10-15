@@ -1,5 +1,5 @@
 ---
-title: "What we do"
+title: "What We Do"
 description: "this is meta description"
 draft: false
 ---
