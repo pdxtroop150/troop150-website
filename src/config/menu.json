@@ -52,7 +52,11 @@
         {
           "name":"Gear",
           "url":"/gear"
-        }  
+        },
+        {
+          "name": "Troop Policies",
+          "url": "/assets/troop-150-policies.pdf"
+        }
       ]
     }
   ],
