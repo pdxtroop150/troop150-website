@@ -23,3 +23,6 @@ package-lock.json
 
 # ignore .astro directory
 .astro
+
+# ignore Cloudflare .wrangler directory
+.wrangler

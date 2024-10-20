@@ -19,6 +19,9 @@
         "4321": {
             "label": "Dev Preview",
             "onAutoForward": "openPreview"
+        },
+        "8788": {
+            "label": "Cloudflare Platform"
         }
     }
 }

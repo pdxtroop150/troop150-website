@@ -54,4 +54,17 @@ export default defineConfig({
     },
     extendDefaultPlugins: true,
   },
+  vite: {
+    server: {
+      proxy: {
+        // Add routes here to proxy to Cloudflare Pages functions (those in the
+        // 'functions' source directory)
+        '^/calendar/.*': {
+          target: 'http://localhost:8788',
+          changeOrigin: true,
+          secure: false,
+        }
+      }
+    }
+  }
 });

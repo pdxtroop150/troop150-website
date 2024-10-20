@@ -2,9 +2,22 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Run development server",
+            "label": "Run Astro development server",
             "type": "shell",
             "command": "./run-dev.sh",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": [],
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        },
+        {
+            "label": "Run Cloudflare Wrangler development server",
+            "type": "shell",
+            "command": "./run-wrangler.sh",
             "presentation": {
                 "reveal": "always",
                 "panel": "dedicated"
