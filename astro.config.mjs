@@ -63,6 +63,11 @@ export default defineConfig({
           target: 'http://localhost:8788',
           changeOrigin: true,
           secure: false,
+        },
+        '/lost-n-found/items': {
+          target: 'http://localhost:8788',
+          changeOrigin: true,
+          secure: false,
         }
       }
     }
