@@ -33,6 +33,10 @@
           "name": "Adult Leaders",
           "url": "/leaders"
          },
+         {
+          "name": "Submit",
+          "url": "/submit"
+         },
         {
           "name": "Forms",
           "url": "/forms"

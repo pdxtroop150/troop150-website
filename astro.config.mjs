@@ -29,6 +29,7 @@ export default defineConfig({
         "@/shortcodes/Accordion",
         "@/shortcodes/Button",
         "@/components/Calendar.astro",
+        "@/components/LostItems.astro",
         "@/shortcodes/Notice",
         "@/shortcodes/Video",
         "@/shortcodes/Youtube",
@@ -60,6 +61,11 @@ export default defineConfig({
         // Add routes here to proxy to Cloudflare Pages functions (those in the
         // 'functions' source directory)
         '^/calendar/.*': {
+          target: 'http://localhost:8788',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/lost-n-found/items': {
           target: 'http://localhost:8788',
           changeOrigin: true,
           secure: false,
