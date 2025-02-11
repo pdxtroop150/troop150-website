@@ -1,21 +1,22 @@
 interface Env {
     LOST_AND_FOUND_ITEMS: R2Bucket;
 }
-/*
-export const onRequest: PagesFunction<Env> = async (context) => {
-    context.
-}
-*/
+
 export const onRequestPost: PagesFunction<Env> = async (context) => {
     try {
       let input = await context.request.formData();
       console.log(input);
 
-      const formDataObj = {};
-      input.forEach((value, key) => (formDataObj[key] = value));
+      const formDataObj = {
+        fname: input.get('fname') as string,
+        description: input.get('description') as string
+      };
 
-      const uuid = crypto.randomUUID()
-      await context.env.LOST_AND_FOUND_ITEMS.put(uuid, "image", {customMetadata:formDataObj})
+      const image = input.get('image') as File;
+      
+
+      const uuid = crypto.randomUUID();
+      await context.env.LOST_AND_FOUND_ITEMS.put(uuid, image, {customMetadata:formDataObj})
 
       console.log(uuid);
       return new Response("Thanks");
@@ -24,12 +25,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       return new Response("Error parsing JSON content", { status: 400 });
     }
   }
+
   export const onRequestGet: PagesFunction<Env> = async (context) => {
     try {
-      const options = { 
+      const options: R2ListOptions = { 
         include: ["customMetadata"],
       };
       
+
       const listed = await context.env.LOST_AND_FOUND_ITEMS.list(options as R2ListOptions);
 
       let truncated = listed.truncated;
@@ -46,11 +49,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         cursor = next.truncated ? next.cursor : undefined;
         
       }
-      console.log(listed.objects)
       
      
 
-      const items = (listed.objects.map(item => item.customMetadata ))
+      const items = listed.objects.map(item => ({
+        ...item.customMetadata,
+        id: item.key
+      }))
       return new Response(JSON.stringify(items), {
         headers: {
           'Content-Type': 'application/json',

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 interface Item {
   fname: string,
   description: string,
+  id: string,
 }
 
 const LostItems = () => {
@@ -15,12 +16,13 @@ const LostItems = () => {
           .then(data => setItems(data)
         )
       });
-  });
+  }, []);
 
-  return <ul>
-    {items.map(item => <li>
-      <p>Name: {item.fname}</p>
-      <p>Description: {item.description}</p>
+  return <ul className="list-none ps-0">
+    {items.map(item => <li className="text-center my-20" key={item.id}>
+      <h4> {item.fname}</h4> 
+      <img src={`/lost-n-found/items/${item.id}`} />
+      <p className="my-0">Description: {item.description}</p>
     </li>)}
   </ul>;
 }
