@@ -1,11 +1,12 @@
 ---
 title: "Eagle Scouts"
-description: "this is meta description"
+description: "Eagle Scouts in Troop 150"
 draft: false
 ---
-There have been 76 eagle scouts in total since the beginning of the troop.
+There have been 79 eagle scouts in total since the beginning of the troop.
 |  First name  |  Last name  |  Month earned  |  Year earned  |
 | :----------: | :----------: | :-----------: | :----------: |
+|  Marten  |  Antonin |  March  | 2026 |
 |  Murray  |  Finn |  January  | 2026 |
 |  Everett  |  Hoffman  |  June  |  2025  |
 |  Porter  |  Ritenour  |  January  |  2025  |
