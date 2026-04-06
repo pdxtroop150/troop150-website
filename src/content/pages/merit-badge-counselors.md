@@ -1,6 +1,6 @@
 ---
 title: "Merit Badge Counselors"
-description: "this is meta description"
+description: "Troop 150/5150 Merit Badge Counselors"
 draft: false
 ---
 Are you wanting to complete a specific merit badge, but don't know who to ask? Well, that's why were here. We will give you the information you need to succeed.
@@ -12,22 +12,21 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 | ----------- | ---------- | --------------- |
 |First Aid|Steven Chen, and Emma Rawnsley| Yes
 |Citizenship in the Community|Chris Shull| Yes|
-|Citizenship in the Society|Joel Ritenour and Chris Shull|Yes|
 |Citizenship in the Nation|Chris Shull| Yes|
 |Citizenship in the World|Joel Ritenour, Emma Rawnsley, and Chris Shull|Yes
 |Communication|Emma Rawnsley|Yes
 |Cooking|Joel Ritenour, and Emma Rawnsley|Yes
-|Personal Fitness|John Kern, Emma Rawnsley, and Chris Shull|Yes
-|Personal Management|Eric Koldinger, James Young, and Emma Rawnsley| Yes
+|Personal Fitness|Emma Rawnsley, and Chris Shull|Yes
+|Personal Management|Eric Koldinger, and Emma Rawnsley| Yes
 |Camping|Chris Shull|Yes
 |Family Life|Joel Ritenour, and Emma Rawnsley|Yes
-|Emergency Prepareness*|Emma Rawnsley and Chris Shull|Yes
-|Lifesaving*|No Counselor|Yes
-|Environmental Science*|Emma Rawnsley and Chris Shull|Yes
-|Sustainabillity*|Joel Ritenour, and Emma Rawnsley|Yes
-|Swimming*|Chris Shull|Yes
-|Hiking*|Emma Rawnsley and Chris Shull|Yes
-|Cycling*|Eric Koldinger and Chris Shull|Yes
+|Emergency Preparedness [^1]|Emma Rawnsley and Chris Shull|Yes
+|Lifesaving [^1]|No Counselor|Yes
+|Environmental Science [^2]|Emma Rawnsley and Chris Shull|Yes
+|Sustainabillity [^2]|Joel Ritenour, and Emma Rawnsley|Yes
+|Swimming[^3]|Chris Shull|Yes
+|Hiking [^3]|Emma Rawnsley and Chris Shull|Yes
+|Cycling [^3]|Eric Koldinger and Chris Shull|Yes
 |American Business|No Counselor|No
 |American Cultures|Joel Ritenour|No
 |American Heritage|No Counselor|No
@@ -38,6 +37,7 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Archery|No Counselor|No
 |Architecture|Nate Horrman|No
 |Art|Joel Ritenour|No
+|Artificial Intelligence|No Counselor|No
 |Astronomy|Eric Koldinger|No
 |Athletics|Chris Shull|No
 |Automotive Maintenance|Joel Ritenour|No
@@ -54,6 +54,7 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Collections|Joel Ritenour|No
 |Composite Materials|No Counselor|No
 |Crime Prevention|Chris Shull|No
+|Cyber Security|Eric Koldinger|No
 |Dentistry|No Cousnelor|No
 |Digital Technology|Eric Koldinger, and Chase Douglas|No
 |Disabilities Awareness|No Counselor|No
@@ -72,14 +73,14 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Fishing|No Counselor|No
 |Fly Fishing|Chris Shull|No
 |Forestry|No Couselor|No
-|Game Design|John Kern|No
+|Game Design|No Counselor|No
 |Gardening|Joel Ritenour|No
 |Genealogy|No Counselor|No
 |Geocaching|Joel Ritenour, and Emma Rawnsley|No
 |Geology|Emma Rawnsley|No
 |Golf|No Counselor|No
 |Graphic Arts|No Counselor|No
-|Health, Care, Professions|No Counselor|No
+|Health Care Professions|No Counselor|No
 |Home Repairs|No Counselor|No
 |Horsemanship|No Counselor|No
 |Indian Lore|No Counselor|No
@@ -96,6 +97,7 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Model Desing and Building|No Counselor|No
 |Motorboating|No Counselor|No
 |Moviemaking|No Counselor|No
+|Multisport|No Counselor|No
 |Music|Joel Ritenour|No
 |Nature|Emma Rawnsley|No
 |Nuclear Science|No Counselor|No
@@ -145,16 +147,17 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Weather|No Counselor|No
 |Welding|No Counselor|No
 |Whitewater|No Counselor|No
-|Wilderness Survival|John Kern|No
+|Wilderness Survival|No Counselor|No
 |Wood Carving|No Counselor|No
 |Woodwork|No Counselor|No
-|
+|Citizenship in the Society [^4]|Joel Ritenour and Chris Shull|No|
 
 
 
+[^1]: Emergency Preparedness and Lifesaving are both Eagle Required, but you only have to do one of them. 
 
-*Emergency Preparedness and Lifesaving are both Eagle Required, but you only have to do one of them. 
+[^2]: Environmental Science and Sustainability are both Eagle Required, but you only have to do one of them.
 
-*Environmental Science and Sustainability are both Eagle Required, but you only have to do one of them.
+[^3]: Swimming, Hiking, and Cycling are all Eagle Required, but you only have to do one of them.
 
-*Swimming, Hiking, and Cycling are all Eagle Required, but you only have to do one of them.
+[^4]: Citizenship in Society has been Discontinued and cannot be started.  It is no longer Eagle Required.  If a scout is working on it, it can be completed as an elective through 2026.
