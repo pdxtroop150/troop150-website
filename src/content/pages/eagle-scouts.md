@@ -6,8 +6,8 @@ draft: false
 There have been 79 eagle scouts in total since the beginning of the troop.
 |  First name  |  Last name  |  Month earned  |  Year earned  |
 | :----------: | :----------: | :-----------: | :----------: |
-|  Marten  |  Antonin |  March  | 2026 |
-|  Murray  |  Finn |  January  | 2026 |
+|  Antonin |  Marten  |  March  | 2026 |
+|  Finn |  Murray  |  January  | 2026 |
 |  Everett  |  Hoffman  |  June  |  2025  |
 |  Porter  |  Ritenour  |  January  |  2025  |
 |  Thaddeus  |  Warman  |  January  |  2025  |
