@@ -7,7 +7,6 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
  
 
 
-
 | Merit Badge | Counselors | Eagle Required |
 | ----------- | ---------- | --------------- |
 |First Aid|Steven Chen, and Emma Rawnsley| Yes
@@ -15,10 +14,10 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Citizenship in the Nation|Chris Shull| Yes|
 |Citizenship in the World|Joel Ritenour, Emma Rawnsley, and Chris Shull|Yes
 |Communication|Emma Rawnsley|Yes
-|Cooking|Joel Ritenour, and Emma Rawnsley|Yes
-|Personal Fitness|Emma Rawnsley, and Chris Shull|Yes
+|Cooking|Joel Ritenour, Dean Hildreth, and Emma Rawnsley|Yes
+|Personal Fitness|Noah Overbeek, Emma Rawnsley, and Chris Shull|Yes
 |Personal Management|Eric Koldinger, and Emma Rawnsley| Yes
-|Camping|Chris Shull|Yes
+|Camping|Chris Shull and Dean Hildreth|Yes
 |Family Life|Joel Ritenour, and Emma Rawnsley|Yes
 |Emergency Preparedness [^1]|Emma Rawnsley and Chris Shull|Yes
 |Lifesaving [^1]|No Counselor|Yes
@@ -45,13 +44,13 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Backpacking|Chris Shull|No
 |Basketry|No Counselor|No
 |Bird Study|Joel Ritenour|No
-|Bugling|No Counselor|No
+|Bugling|Eric Koldinger|No
 |Canoeing|No Counselor|No
 |Chemistry|Chase Douglas|No
 |Chess|Joel Ritenour|No
 |Climbing|Chris Shull|No
 |Coin Collecting|Joel Ritenour|No
-|Collections|Joel Ritenour|No
+|Collections|Joel Ritenour and Dean Hildreth|No
 |Composite Materials|No Counselor|No
 |Crime Prevention|Chris Shull|No
 |Cyber Security|Eric Koldinger|No
@@ -64,7 +63,7 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Electronics|Chase Douglas|No
 |Energy|No Counselor|No
 |Engineering|Chase Douglas|No
-|Entrepreneurship| and Chase Douglas|No
+|Entrepreneurship| Dean Hildreth and Chase Douglas|No
 |Exploration|No Counselor|No
 |Farm Mechanics|No Counselor|No
 |Fingerprinting|No Counselor|No
@@ -78,14 +77,14 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Genealogy|No Counselor|No
 |Geocaching|Joel Ritenour, and Emma Rawnsley|No
 |Geology|Emma Rawnsley|No
-|Golf|No Counselor|No
-|Graphic Arts|No Counselor|No
+|Golf|Dean Hildreth|No
+|Graphic Arts|Dean Hildreth|No
 |Health Care Professions|No Counselor|No
-|Home Repairs|No Counselor|No
+|Home Repairs|Dean Hildreth|No
 |Horsemanship|No Counselor|No
 |Indian Lore|No Counselor|No
 |Insect Study|No Counselor|No
-|Inventing|No Counselor|No
+|Inventing|Dean Hildreth|No
 |Journalism|No Counselor|No
 |Kayaking|No Counselor|No
 |Landscape Architecture|No Counselor|No
@@ -95,17 +94,17 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Metalwork|No Couselor|No
 |Mining in Society|No Counselor|No
 |Model Desing and Building|No Counselor|No
-|Motorboating|No Counselor|No
+|Motorboating|Dean Hildreth|No
 |Moviemaking|No Counselor|No
 |Multisport|No Counselor|No
-|Music|Joel Ritenour|No
+|Music|Eric Koldinger, Joel Ritenour|No
 |Nature|Emma Rawnsley|No
 |Nuclear Science|No Counselor|No
 |Oceanography|Emma Rawnsley|No
 |Orienteering|No Counselor|No
 |Painting|No Counselor|No
 |Pets|Joel Ritenour|No
-|Photography|No Counselor|No
+|Photography|Dean Hildreth|No
 |Pioneering|No Counselor|No
 |Plant Science|No Counselor|No
 |Plumbing|No Counselor|No
@@ -122,7 +121,7 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Robotics|Chase Douglas|No
 |Rowing|No Counselor|No
 |Safety|No Counselor|No
-|Salesmanship|No Counselor|No
+|Salesmanship|Dean Hildreth|No
 |Scholarship|Joel Ritenour|No
 |Scouting Heritage|Joel Ritenour|No
 |Scuba Diving|No Counselor|No
@@ -140,14 +139,14 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Surveying|No Counselor|No
 |Textile|No Counselor|No
 |Theater|No Counselor|No
-|Traffic Safety|No Counselor|No
-|Truck Transportation|No Counselor|No
+|Traffic Safety|Dean Hildreth|No
+|Truck Transportation|Dean Hildreth|No
 |Veterinary Medicine|Joel Ritenour|No
-|Water Sports|No Counselor|No
+|Water Sports|Dean Hildreth|No
 |Weather|No Counselor|No
 |Welding|No Counselor|No
 |Whitewater|No Counselor|No
-|Wilderness Survival|No Counselor|No
+|Wilderness Survival|Dean Hildreth|No
 |Wood Carving|No Counselor|No
 |Woodwork|No Counselor|No
 |Citizenship in the Society [^4]|Joel Ritenour and Chris Shull|No|
