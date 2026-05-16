@@ -10,12 +10,12 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 | Merit Badge | Counselors | Eagle Required |
 | ----------- | ---------- | --------------- |
 |First Aid|Steven Chen, and Emma Rawnsley| Yes
-|Citizenship in the Community|Chris Shull| Yes|
-|Citizenship in the Nation|Chris Shull| Yes|
-|Citizenship in the World|Joel Ritenour, Emma Rawnsley, and Chris Shull|Yes
+|Citizenship in the Community|Chris Shull, Rebecca Hildreth| Yes|
+|Citizenship in the Nation|Chris Shull, Rebecca Hildreth| Yes|
+|Citizenship in the World|Joel Ritenour, Emma Rawnsley, Chris Shull, Rebecca Hildreth|Yes
 |Communication|Emma Rawnsley|Yes
-|Cooking|Joel Ritenour, Dean Hildreth, and Emma Rawnsley|Yes
-|Personal Fitness|Noah Overbeek, Emma Rawnsley, and Chris Shull|Yes
+|Cooking|Joel Ritenour, Dean Hildreth, Emma Rawnsley, Rebecca Hildreth|Yes
+|Personal Fitness|Noah Overbeek, Emma Rawnsley, Chris Shull, Rebecca Hilderth|Yes
 |Personal Management|Eric Koldinger, and Emma Rawnsley| Yes
 |Camping|Chris Shull and Dean Hildreth|Yes
 |Family Life|Joel Ritenour, and Emma Rawnsley|Yes
@@ -24,7 +24,7 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Environmental Science [^2]|Emma Rawnsley and Chris Shull|Yes
 |Sustainabillity [^2]|Joel Ritenour, and Emma Rawnsley|Yes
 |Swimming[^3]|Chris Shull|Yes
-|Hiking [^3]|Emma Rawnsley and Chris Shull|Yes
+|Hiking [^3]|Emma Rawnsley, Chris Shull, Rebecca Hildreth|Yes
 |Cycling [^3]|Eric Koldinger and Chris Shull|Yes
 |American Business|No Counselor|No
 |American Cultures|Joel Ritenour|No
@@ -40,7 +40,7 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Astronomy|Eric Koldinger|No
 |Athletics|Chris Shull|No
 |Automotive Maintenance|Joel Ritenour|No
-|Aviation|No Counselor|No
+|Aviation|Eric Koldinger|No
 |Backpacking|Chris Shull|No
 |Basketry|No Counselor|No
 |Bird Study|Joel Ritenour|No
@@ -104,7 +104,7 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Orienteering|No Counselor|No
 |Painting|No Counselor|No
 |Pets|Joel Ritenour|No
-|Photography|Dean Hildreth|No
+|Photography|Dean Hildreth, Rebecca Hildreth|No
 |Pioneering|No Counselor|No
 |Plant Science|No Counselor|No
 |Plumbing|No Counselor|No
@@ -115,7 +115,7 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Pulp and Paper|No Counselor|No
 |Radio|No Counselor|No
 |Railroading|No Counselor|No
-|Reading|Joel Ritenour|No
+|Reading|Joel Ritenour, Rebecca Hildreth|No
 |Reptile and Amphibian Study|No Counselor|No
 |Rifle Shooting|No Counselor|No
 |Robotics|Chase Douglas|No
