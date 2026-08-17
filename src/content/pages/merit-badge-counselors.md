@@ -11,9 +11,9 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 | ----------- | ---------- | --------------- |
 |First Aid|Steven Chen, and Emma Rawnsley| Yes
 |Citizenship in the Community|Chris Shull, Rebecca Hildreth| Yes|
-|Citizenship in the Nation|Chris Shull, Rebecca Hildreth| Yes|
+|Citizenship in the Nation|Chris Shull, Rebecca Hildreth, Michaela Bedard| Yes|
 |Citizenship in the World|Joel Ritenour, Emma Rawnsley, Chris Shull, Rebecca Hildreth|Yes
-|Communication|Emma Rawnsley|Yes
+|Communication|Emma Rawnsley, Michaela Bedard|Yes
 |Cooking|Joel Ritenour, Dean Hildreth, Emma Rawnsley, Rebecca Hildreth|Yes
 |Personal Fitness|Noah Overbeek, Emma Rawnsley, Chris Shull, Rebecca Hilderth|Yes
 |Personal Management|Eric Koldinger, and Emma Rawnsley| Yes
@@ -111,7 +111,7 @@ Are you wanting to complete a specific merit badge, but don't know who to ask? W
 |Pottery|No Counselor|No
 |Programming|Eric Koldinger and Chase Douglas|No
 |Public Health|No Counselor|No
-|Public Speaking|Emma Rawnsley and Chris Shull|No
+|Public Speaking|Emma Rawnsley, Chris Shull, Michaela Bedard|No
 |Pulp and Paper|No Counselor|No
 |Radio|No Counselor|No
 |Railroading|No Counselor|No
