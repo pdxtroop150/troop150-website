@@ -157,8 +157,13 @@ so on any other branch, test payments won't reach the Tree Recycling sheet.
    they heard about us, tree and wreath counts, and a required additional
    donation (which may be $0).
 2. **Check address** (or the final button) standardizes the address with
-   Google and checks the service area. Out-of-area and unrecognized
-   addresses get a note to email trees@troop150.org for mistakes or bulk pickups.
+   Google and checks the service area, then fills the address fields with the
+   postal formatting. If postal records actually differ from what was typed
+   (a different ZIP code, city, or street spelling, not just capitalization or
+   abbreviations), a dialog asks the customer to confirm the suggested address;
+   if they keep their own, payment is blocked until the address changes.
+   Out-of-area and unrecognized addresses get a note to email
+   trees@troop150.org for mistakes or bulk pickups.
 3. **Continue to secure payment with Square** sends the request to the server,
    which repeats every check, creates a Square order and payment link, and
    redirects the customer to Square's hosted payment page (Apple Pay, Google
