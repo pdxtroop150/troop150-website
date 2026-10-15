@@ -209,8 +209,13 @@ export function describeItems(trees: number, wreaths: number): string {
 
 export const MAX_INSTRUCTIONS_LENGTH = 250;
 
-/** Browser session key for the request details shown on the confirmation page. */
+/**
+ * Browser storage key for the request details shown on the confirmation page.
+ * Local storage, not session storage, so the details survive Square returning
+ * the customer in a new tab. Kept for CONFIRMATION_STORAGE_MS.
+ */
 export const CONFIRMATION_STORAGE_KEY = "treeRecyclingRequest";
+export const CONFIRMATION_STORAGE_MS = 24 * 60 * 60 * 1000;
 
 /** Keep only the digits of a US phone number, dropping a leading 1. */
 export function phoneDigits(phone: string): string {

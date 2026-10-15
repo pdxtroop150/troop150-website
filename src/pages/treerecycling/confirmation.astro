@@ -20,7 +20,11 @@ import { settings } from "@/lib/treeRecycling/settings";
             <strong>{settings.curbDeadlineLabel}</strong> for pickup, with lights,
             ornaments, tinsel, and stands removed.
           </span>
-          <span id="tree-request-general">{settings.curbInstructions}</span>
+          <span id="tree-request-general">
+            Please place your trees and wreaths by your curb by
+            <strong>{settings.curbDeadlineLabel}</strong> for pickup, with lights,
+            ornaments, tinsel, and stands removed.
+          </span>
           {settings.collectionDateNote}
         </p>
         <p>
@@ -34,7 +38,10 @@ import { settings } from "@/lib/treeRecycling/settings";
 </Base>
 
 <script>
-  import { CONFIRMATION_STORAGE_KEY } from "@/lib/treeRecycling/settings";
+  import {
+    CONFIRMATION_STORAGE_KEY,
+    CONFIRMATION_STORAGE_MS,
+  } from "@/lib/treeRecycling/settings";
 
   function showDetails() {
     const details = document.getElementById("tree-request-details");
@@ -43,9 +50,14 @@ import { settings } from "@/lib/treeRecycling/settings";
     }
     try {
       const saved = JSON.parse(
-        sessionStorage.getItem(CONFIRMATION_STORAGE_KEY) ?? "null",
+        localStorage.getItem(CONFIRMATION_STORAGE_KEY) ?? "null",
       );
       if (!saved) {
+        return;
+      }
+      // Don't keep an address around on a shared computer.
+      if (!(Date.now() - saved.savedAt < CONFIRMATION_STORAGE_MS)) {
+        localStorage.removeItem(CONFIRMATION_STORAGE_KEY);
         return;
       }
       const set = (field: string, text: string) => {
