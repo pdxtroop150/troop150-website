@@ -13,15 +13,16 @@ import { settings } from "@/lib/treeRecycling/settings";
           Your tree pickup request is complete. Square is emailing your receipt
           now.
         </p>
-        <div id="tree-request-details" hidden>
-          <p>
-            We'll pick up your <strong data-field="items"></strong> at
-            <strong data-field="address"></strong> on
-            <strong>{settings.collectionDateLabel}</strong>.
-          </p>
-        </div>
-        <p><small>{settings.collectionDateNote}</small></p>
-        <p>{settings.curbInstructions}</p>
+        <p>
+          <span id="tree-request-details" hidden>
+            Please put your <strong data-field="items"></strong> by your curb at
+            <strong data-field="address"></strong> by
+            <strong>{settings.curbDeadlineLabel}</strong> for pickup, with lights,
+            ornaments, tinsel, and stands removed.
+          </span>
+          <span id="tree-request-general">{settings.curbInstructions}</span>
+          {settings.collectionDateNote}
+        </p>
         <p>
           Questions? Email <a href={`mailto:${settings.supportEmail}`}
             >{settings.supportEmail}</a
@@ -54,6 +55,8 @@ import { settings } from "@/lib/treeRecycling/settings";
       set("items", saved.items);
       set("address", saved.address);
       details.hidden = false;
+      // The details sentence already includes the curb instructions.
+      document.getElementById("tree-request-general")?.setAttribute("hidden", "");
     } catch {
       // Without saved details, the general message above is enough.
     }
