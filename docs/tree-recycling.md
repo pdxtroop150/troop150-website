@@ -42,7 +42,9 @@ the deadline shown on the form, and the drop-off dates (the weekend before
 pickup through the weekend after).
 
 There is no "open" date: **the form is live as soon as it is deployed** and
-closes automatically after `requestDeadline`. Merge to `main` only when you're
+closes automatically after `requestDeadline`. Until then, "Tree Recycling" is
+also a top-level menu item; afterward it moves back under Troop Info (the
+`promoteWhileTreeRequestsOpen` flag in `src/config/menu.json`). Merge to `main` only when you're
 ready for people to start requesting pickups.
 
 Things that rarely change are in code rather than settings. Edit them there if
