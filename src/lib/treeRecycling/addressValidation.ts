@@ -104,7 +104,11 @@ export async function checkAddress(
   const lat = result?.geocode?.location?.latitude;
   const lng = result?.geocode?.location?.longitude;
   const usps = result?.uspsData?.standardizedAddress;
-  const zip = (usps?.zipCode ?? result?.address?.postalAddress?.postalCode ?? "").slice(0, 5);
+  // USPS's version is the most consistent, but only when USPS matched the
+  // address. When it doesn't, it echoes the input back, typos and all, while
+  // Google's own result has the correction.
+  const uspsMatched = USPS_CONFIRMED.has(result?.uspsData?.dpvConfirmation ?? "");
+  const zip = ((uspsMatched ? usps?.zipCode : undefined) ?? result?.address?.postalAddress?.postalCode ?? "").slice(0, 5);
 
   // Google will "match" a made-up house number on a made-up street, but marks
   // it unconfirmed and USPS doesn't recognize it. Require one or the other.
@@ -123,7 +127,7 @@ export async function checkAddress(
     return { status: "not-found" };
   }
 
-  const parts = standardizedParts(result, zip);
+  const parts = standardizedParts(result, zip, uspsMatched);
   const address: StandardizedAddress = {
     ...parts,
     formatted: `${[parts.street, parts.unit].filter(Boolean).join(" ")}, ${parts.city}, OR ${parts.zip}`,
@@ -144,29 +148,34 @@ const UNIT_DESIGNATORS =
   "APT|UNIT|STE|SUITE|BLDG|FL|RM|SPC|TRLR|LOT|DEPT|OFC|PH|LOWR|UPPR|REAR|FRNT|SIDE|BSMT|LBBY|HNGR|KEY|PIER|SLIP|STOP";
 
 /**
- * The postal address split into the form's fields. USPS puts the unit on the
- * street line ("1500 SW 1ST AVE APT 1201"), so split it back off.
+ * The postal address split into the form's fields. Both USPS and Google put
+ * the unit on the street line ("1500 SW 1ST AVE APT 1201"), so split it back
+ * off. Google spells words out ("Southwest Condor Avenue"), so abbreviate
+ * them the USPS way.
  */
 function standardizedParts(
   result: NonNullable<GoogleValidationResponse["result"]>,
   zip: string,
+  uspsMatched: boolean,
 ): { street: string; unit: string; city: string; zip: string } {
   const usps = result.uspsData?.standardizedAddress;
-  if (usps?.firstAddressLine && usps.city) {
-    const line = [usps.firstAddressLine, usps.secondAddressLine].filter(Boolean).join(" ");
-    const match = line.match(new RegExp(`^(.*?)\\s+((?:#|(?:${UNIT_DESIGNATORS})\\b).*)$`));
-    return {
-      street: titleCaseStreet(match ? match[1] : line),
-      unit: match ? titleCaseStreet(match[2]) : "",
-      city: titleCase(usps.city),
-      zip,
-    };
-  }
   const postal = result.address?.postalAddress;
+  const [line, city] =
+    uspsMatched && usps?.firstAddressLine && usps.city
+      ? [[usps.firstAddressLine, usps.secondAddressLine].filter(Boolean).join(" "), usps.city]
+      : [(postal?.addressLines ?? []).join(" "), postal?.locality ?? ""];
+
+  const abbreviated = line
+    .toUpperCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => ABBREVIATIONS[word] ?? word)
+    .join(" ");
+  const match = abbreviated.match(new RegExp(`^(.*?)\\s+((?:#|(?:${UNIT_DESIGNATORS})\\b).*)$`));
   return {
-    street: postal?.addressLines?.[0] ?? "",
-    unit: "",
-    city: postal?.locality ?? "",
+    street: titleCaseStreet(match ? match[1] : abbreviated),
+    unit: match ? titleCaseStreet(match[2]) : "",
+    city: titleCase(city),
     zip,
   };
 }

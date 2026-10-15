@@ -125,4 +125,36 @@ describe("checkAddress", () => {
       },
     });
   });
+
+  it("uses Google's correction when USPS couldn't match the typed street", async () => {
+    google({
+      address: {
+        formattedAddress: "4128 Southwest Condor Avenue, Portland, OR 97239-4107, USA",
+        postalAddress: {
+          addressLines: ["4128 Southwest Condor Avenue"],
+          locality: "Portland",
+          postalCode: "97239-4107",
+        },
+      },
+      geocode: { location: { latitude: 45.4934, longitude: -122.6791 } },
+      // USPS echoes the typo back without confirming it.
+      uspsData: {
+        standardizedAddress: {
+          firstAddressLine: "4128 SW CODOR AVE",
+          city: "PORTLAND",
+          zipCode: "97239",
+        },
+      },
+    });
+    expect(
+      await checkAddress(
+        { street: "4128 SW Codor Ave", unit: "", city: "Portland", zip: "97239" },
+        "key",
+      ),
+    ).toMatchObject({
+      status: "in-area",
+      corrected: true,
+      address: { street: "4128 SW Condor Ave", city: "Portland", zip: "97239" },
+    });
+  });
 });
