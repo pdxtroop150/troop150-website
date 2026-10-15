@@ -1,11 +1,17 @@
 ---
 import Logo from "@/components/Logo.astro";
 import menu from "@/config/menu.json";
+import { requestsOpen, settings } from "@/lib/treeRecycling/settings";
 import { IoSearch } from "react-icons/io5";
 
 export interface ChildNavigationLink {
   name: string;
   url: string;
+  /**
+   * Show as a top-level item while tree recycling pickup requests are open,
+   * and back in its submenu afterward.
+   */
+  promoteWhileTreeRequestsOpen?: boolean;
 }
 
 export interface NavigationLink {
@@ -16,12 +22,32 @@ export interface NavigationLink {
 }
 
 const { main }: { main: NavigationLink[] } = menu;
+
+// The site is static, so the script below re-decides in the browser; this
+// build-time guess just avoids a flicker for most visitors.
+const treeRequests = requestsOpen(new Date()) ? "open" : "closed";
 ---
 
-<header class="header pt-6">
+<header class="header pt-6" data-tree-requests={treeRequests}>
+  <script is:inline define:vars={{ deadlineAt: settings.requestDeadlineAt }}>
+    // Runs as the header loads, so the right menu shows without a flicker.
+    // The site swaps pages without reloading (Astro's ClientRouter), which
+    // doesn't rerun this script, so also apply it after each swap.
+    const applyTreeMenu = () => {
+      const header = document.querySelector("header.header");
+      if (header) {
+        header.dataset.treeRequests = Date.now() <= deadlineAt ? "open" : "closed";
+      }
+    };
+    applyTreeMenu();
+    if (!window.treeMenuListening) {
+      window.treeMenuListening = true;
+      document.addEventListener("astro:after-swap", applyTreeMenu);
+    }
+  </script>
   <nav class="navbar container">
     <!-- logo -->
-    <div class="order-0">
+    <div class="order-0 nav:mr-6">
       <Logo />
     </div>
     <!-- navbar toggler -->
@@ -29,7 +55,7 @@ const { main }: { main: NavigationLink[] } = menu;
     <label
       id="show-button"
       for="nav-toggle"
-      class="order-2 flex cursor-pointer items-center text-black md:order-1 md:hidden"
+      class="order-2 flex cursor-pointer items-center text-black nav:order-1 nav:hidden"
     >
       <svg class="h-6 fill-current" viewBox="0 0 20 20">
         <title>Menu Open</title>
@@ -39,7 +65,7 @@ const { main }: { main: NavigationLink[] } = menu;
     <label
       id="hide-button"
       for="nav-toggle"
-      class="order-2 hidden cursor-pointer items-center text-black md:order-1"
+      class="order-2 hidden cursor-pointer items-center text-black nav:order-1"
     >
       <svg class="h-6 fill-current" viewBox="0 0 20 20">
         <title>Menu Close</title>
@@ -52,22 +78,35 @@ const { main }: { main: NavigationLink[] } = menu;
 
     <ul
       id="nav-menu"
-      class="navbar-nav order-3 hidden w-full md:order-1 md:flex md:w-auto"
+      class="navbar-nav order-3 hidden w-full nav:order-1 nav:flex nav:w-auto nav:grow"
     >
       {
         main.map((menu) => (
           <>
+            {menu.children
+              ?.filter((child) => child.promoteWhileTreeRequestsOpen)
+              .map((child) => (
+                <li class="nav-item" data-tree-promoted>
+                  <a href={child.url} class="nav-link block">
+                    {child.name}
+                  </a>
+                </li>
+              ))}
             {menu.hasChildren ? (
-              <li class="nav-item nav-dropdown group relative cursor-pointer">
-                <span class="nav-link inline-flex items-center">
-                  {menu.name}
+              <li class="nav-item nav-dropdown group relative cursor-pointer nav:flex nav:items-center">
+                <span class="nav-link inline-flex items-center" title={menu.name}>
+                  {/* Between the nav and lg widths, only the chevron fits beside the logo. */}
+                  <span class="nav:max-lg:sr-only">{menu.name}</span>
                   <svg class="h-5 w-5 fill-current" viewBox="0 0 20 20">
                     <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                   </svg>
                 </span>
-                <ul class="nav-dropdown-list hidden group-hover:block md:invisible md:absolute md:block md:opacity-0 md:group-hover:visible md:group-hover:opacity-100">
+                <ul class="nav-dropdown-list hidden group-hover:block nav:invisible nav:absolute nav:right-0 nav:block nav:opacity-0 nav:group-hover:visible nav:group-hover:opacity-100">
                   {menu.children?.map((child) => (
-                    <li class="nav-dropdown-item">
+                    <li
+                      class="nav-dropdown-item"
+                      data-tree-submenu={child.promoteWhileTreeRequestsOpen ? "" : undefined}
+                    >
                       <a href={child.url} class="nav-dropdown-link">
                         {child.name}
                       </a>
@@ -85,13 +124,25 @@ const { main }: { main: NavigationLink[] } = menu;
           </>
         ))
       }
+      <li class="nav-item nav-search hidden nav:flex nav:items-center">
+        <a
+          class="inline-block cursor-pointer p-2 text-xl text-dark transition hover:text-primary"
+          href="/search"
+          title="search"
+          aria-label="search"
+        >
+          <IoSearch />
+        </a>
+      </li>
     </ul>
-    <div class="order-1 ml-auto flex md:order-2 md:ml-0">
+    <!-- Search on phones, beside the menu button. On wider screens it's the
+         menu's last item instead, so it never wraps onto a row by itself. -->
+    <div class="order-1 ml-auto flex nav:hidden">
       <a
-        class="mr-4 inline-block cursor-pointer p-2 text-xl text-dark transition hover:text-primary md:mr-0"
+        class="mr-4 inline-block cursor-pointer p-2 text-xl text-dark transition hover:text-primary"
         href="/search"
-        title="seach"
-        aria-label="seach"
+        title="search"
+        aria-label="search"
       >
         <IoSearch />
       </a>
