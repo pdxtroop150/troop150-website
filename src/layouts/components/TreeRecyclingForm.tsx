@@ -318,12 +318,12 @@ export default function TreeRecyclingForm() {
     if (result.url) {
       // Saved so the confirmation page can repeat the details after Square.
       try {
-        sessionStorage.setItem(
+        localStorage.setItem(
           CONFIRMATION_STORAGE_KEY,
           JSON.stringify({
             address: checked.formatted,
             items: describeItems(request.trees, request.wreaths),
-            email: request.email,
+            savedAt: Date.now(),
           }),
         );
       } catch {

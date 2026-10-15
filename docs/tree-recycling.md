@@ -270,9 +270,11 @@ Changing columns in `SHEET_COLUMNS` (in `sheets.ts`) only affects new tabs, so
 delete or fix an existing tab's header by hand.
 
 The confirmation page doesn't need any of this: the form saves the address
-and items in the browser's session storage before leaving for Square, and the
-confirmation page reads them back. (Square's Sandbox doesn't add `orderId` to
-the return address, so nothing relies on it.)
+and items in the browser's local storage before leaving for Square, and the
+confirmation page reads them back (so it works even if Square returns the
+customer in a new tab). The saved details expire after a day. Without them,
+the page shows general curb instructions instead. (Square's Sandbox doesn't add
+`orderId` to the return address, so nothing relies on it.)
 
 ### Environments
 
