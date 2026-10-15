@@ -1,11 +1,47 @@
 ---
 title: Tree Recycling
+description: Have Troop 150 pick up and recycle your Christmas tree, or drop it off at our tree lot.
 ---
 
-import JotFormReloaderAndSizer from '@/lib/jotFormReloaderAndSizer.astro';
+import TreeRecyclingForm from '@/components/TreeRecyclingForm';
+import { settings } from '@/lib/treeRecycling/settings';
 
----
+export const { dropOff } = settings;
 
-<script type="text/javascript" src="https://form.jotform.com/jsform/203098337905157"></script>
+Let Troop 150 recycle your Christmas tree and wreaths while supporting our
+scouts! Request a curbside pickup below, or bring them to our drop-off lot.
 
-<JotFormReloaderAndSizer height={3500} />
+## Curbside pickup
+
+We pick up trees on **{settings.collectionDateLabel}**.
+{settings.collectionDateNote} We collect trees in SW and NW Portland.
+
+<TreeRecyclingForm client:load />
+
+## Drop-off
+
+Bring your tree or wreaths to **{dropOff.location}** ({dropOff.address}) from
+{dropOff.hours}, {dropOff.dates}. Please remove all lights, ornaments, tinsel,
+and stands.
+
+Drop-off is ${settings.pricePerTreeDollars} per tree and ${settings.pricePerWreathDollars} per wreath. Pay at
+the lot with Venmo, cash, or a check made out to {dropOff.checksPayableTo}. The
+Venmo QR code is set to ${settings.pricePerTreeDollars} for one tree; change the
+amount if you're dropping off more. No reservation is needed.
+
+{dropOff.venmoQrImage && (
+  <img
+    src={dropOff.venmoQrImage}
+    alt="Venmo QR code for Troop 150"
+    width="240"
+    height="240"
+  />
+)}
+
+{dropOff.venmoHandle && (
+  <p>
+    Venmo: <a href={`https://venmo.com/u/${dropOff.venmoHandle}`}>@{dropOff.venmoHandle}</a>
+  </p>
+)}
+
+Thanks for supporting Troop 150/5150!

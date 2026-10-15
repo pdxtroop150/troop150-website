@@ -26,3 +26,7 @@ package-lock.json
 
 # ignore Cloudflare .wrangler directory
 .wrangler
+
+# Cloudflare Pages Functions local secrets (and editor copies of them)
+.dev.vars*
+!.dev.vars.example

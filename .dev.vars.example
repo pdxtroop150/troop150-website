@@ -1,0 +1,22 @@
+# Copy to .dev.vars (git-ignored) for local development with ./run-wrangler.sh.
+# Local development always uses Square Sandbox and the TEST Google Sheet.
+# See tree-recycling-development-plan.md.
+
+# Square Sandbox credentials. (Leave SQUARE_ENVIRONMENT unset; only the
+# production deployment sets it, to "production".)
+SQUARE_ACCESS_TOKEN=
+SQUARE_LOCATION_ID=
+
+# Locally, the webhook is exercised with scripts/send-test-webhook.mjs, which
+# signs with this key, so any random string works. When using a cloudflared
+# tunnel instead, use that Square subscription's signature key.
+SQUARE_WEBHOOK_SIGNATURE_KEY=local-test-signature-key
+
+GOOGLE_MAPS_API_KEY=
+
+# The test service account's JSON key on one line, in single quotes.
+GOOGLE_SERVICE_ACCOUNT='{"type":"service_account","client_email":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"}'
+# Rows go on the "<year> Test" tab here (the year comes from collectionDate in
+# src/config/treeRecycling.json); production uses the "<year>" tab.
+TREE_SHEET_ID=
+
