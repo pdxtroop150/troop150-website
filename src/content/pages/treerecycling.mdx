@@ -6,8 +6,6 @@ description: Have Troop 150 pick up and recycle your Christmas tree, or drop it 
 import TreeRecyclingForm from '@/components/TreeRecyclingForm';
 import { settings } from '@/lib/treeRecycling/settings';
 
-export const { dropOff } = settings;
-
 Let Troop 150 recycle your Christmas tree and wreaths while supporting our
 scouts! Request a curbside pickup below, or bring them to our drop-off lot.
 
@@ -20,28 +18,14 @@ We pick up trees on **{settings.collectionDateLabel}**.
 
 ## Drop-off
 
-Bring your tree or wreaths to **{dropOff.location}** ({dropOff.address}) from
-{dropOff.hours}, {dropOff.dates}. Please remove all lights, ornaments, tinsel,
-and stands.
+Bring your tree or wreaths to **St. Andrews Presbyterian Church** (3228 SW
+Sunset Blvd, Portland, OR 97239) from 9 a.m. to 4 p.m.,
+{settings.dropOffDatesLabel}. Please remove all lights, ornaments, tinsel, and
+stands.
 
 Drop-off is ${settings.pricePerTreeDollars} per tree and ${settings.pricePerWreathDollars} per wreath. Pay at
-the lot with Venmo, cash, or a check made out to {dropOff.checksPayableTo}. The
-Venmo QR code is set to ${settings.pricePerTreeDollars} for one tree; change the
-amount if you're dropping off more. No reservation is needed.
-
-{dropOff.venmoQrImage && (
-  <img
-    src={dropOff.venmoQrImage}
-    alt="Venmo QR code for Troop 150"
-    width="240"
-    height="240"
-  />
-)}
-
-{dropOff.venmoHandle && (
-  <p>
-    Venmo: <a href={`https://venmo.com/u/${dropOff.venmoHandle}`}>@{dropOff.venmoHandle}</a>
-  </p>
-)}
+the lot with Venmo, cash, or a check made out to Troop 150. The Venmo QR code
+is set to ${settings.pricePerTreeDollars} for one tree; change the amount if you're dropping off more.
+No reservation is needed.
 
 Thanks for supporting Troop 150/5150!

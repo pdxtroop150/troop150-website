@@ -1,6 +1,6 @@
 # Copy to .dev.vars (git-ignored) for local development with ./run-wrangler.sh.
-# Local development always uses Square Sandbox and the TEST Google Sheet.
-# See tree-recycling-development-plan.md.
+# Local development always uses Square Sandbox and the "<year> Test" sheet tab.
+# See docs/tree-recycling.md.
 
 # Square Sandbox credentials. (Leave SQUARE_ENVIRONMENT unset; only the
 # production deployment sets it, to "production".)
