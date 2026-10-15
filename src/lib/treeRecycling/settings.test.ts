@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildSettings,
   describeItems,
+  formatPhoneAsTyped,
   orderLines,
   orderTotalCents,
   pickupNote,
@@ -67,6 +68,51 @@ describe("sheetTabName", () => {
     expect(sheetTabName(true)).toBe("2027");
     expect(sheetTabName(false)).toBe("2027 Test");
     expect(sheetTabName(false, { ...settings, collectionDate: "2028-01-08" })).toBe("2028 Test");
+  });
+});
+
+describe("formatPhoneAsTyped", () => {
+  const typed = (keys: string) =>
+    [...keys].reduce((value, key) => formatPhoneAsTyped(value + key, value, false).value, "");
+  /** Apply an edit made with the cursor at the "|" in `edited`. */
+  const edit = (edited: string, previous: string, deleting = false) => {
+    const caret = edited.indexOf("|");
+    const r = formatPhoneAsTyped(edited.replace("|", ""), previous, deleting, caret);
+    return r.value.slice(0, r.caret) + "|" + r.value.slice(r.caret);
+  };
+
+  it("formats as digits are typed", () => {
+    expect(typed("5")).toBe("(5");
+    expect(typed("503")).toBe("(503");
+    expect(typed("5035")).toBe("(503) 5");
+    expect(typed("503555")).toBe("(503) 555");
+    expect(typed("5035550")).toBe("(503) 555-0");
+    expect(typed("5035550100")).toBe("(503) 555-0100");
+  });
+
+  it("ignores extra digits and non-digits", () => {
+    expect(typed("50355501009")).toBe("(503) 555-0100");
+    expect(typed("503-abc-555")).toBe("(503) 555");
+  });
+
+  it("drops a leading +1 from autofill or pasting", () => {
+    expect(formatPhoneAsTyped("+1 503 555 0100", "", false).value).toBe("(503) 555-0100");
+    expect(formatPhoneAsTyped("15035550100", "", false).value).toBe("(503) 555-0100");
+  });
+
+  it("backspaces from the end normally", () => {
+    expect(edit("(503) 555-010|", "(503) 555-0100", true)).toBe("(503) 555-010|");
+    expect(edit("(503) 555|", "(503) 555-0", true)).toBe("(503) 555|");
+  });
+
+  it("backspacing over punctuation removes the digit before it", () => {
+    expect(edit("(503) 555|0100", "(503) 555-0100", true)).toBe("(503) 55|0-100");
+    expect(edit("(503 |555-0100", "(503) 555-0100", true)).toBe("(50|5) 550-100");
+  });
+
+  it("keeps the cursor in place when editing mid-number", () => {
+    expect(edit("(5039|) 555-010", "(503) 555-010")).toBe("(503) 9|55-5010");
+    expect(edit("(50|) 555-0100", "(503) 555-0100", true)).toBe("(50|5) 550-100");
   });
 });
 

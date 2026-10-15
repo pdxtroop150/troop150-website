@@ -17,6 +17,7 @@ function google(result: Record<string, unknown> = {}) {
             standardizedAddress: {
               firstAddressLine: "8935 SW 52ND AVE",
               cityStateZipAddressLine: "PORTLAND OR 97219-3322",
+              city: "PORTLAND",
               zipCode: "97219",
             },
             dpvConfirmation: "Y",
@@ -57,6 +58,7 @@ describe("checkAddress", () => {
           firstAddressLine: "8935 SW 52ND AVE",
           secondAddressLine: "APT 12B",
           cityStateZipAddressLine: "PORTLAND OR 97219-3322",
+          city: "PORTLAND",
           zipCode: "97219",
         },
         dpvConfirmation: "S",
@@ -71,5 +73,56 @@ describe("checkAddress", () => {
   it("treats a street-level match as not found", async () => {
     google({ verdict: { validationGranularity: "ROUTE" } });
     expect(await checkAddress(input, "key")).toEqual({ status: "not-found" });
+  });
+
+  it("does not flag capitalization or standard abbreviations as corrections", async () => {
+    google();
+    const check = await checkAddress(
+      { street: "8935 Southwest 52nd Avenue", unit: "", city: "portland", zip: "97219" },
+      "key",
+    );
+    expect(check).toMatchObject({ status: "in-area", corrected: false });
+  });
+
+  it("flags a ZIP code Google replaced", async () => {
+    google({ verdict: { validationGranularity: "PREMISE", hasReplacedComponents: true } });
+    expect(await checkAddress({ ...input, zip: "97239" }, "key")).toMatchObject({
+      corrected: true,
+      address: { zip: "97219" },
+    });
+  });
+
+  it("flags a misspelled street that Google fixed without saying so", async () => {
+    google();
+    expect(
+      await checkAddress({ ...input, street: "8935 SW 52nd Avnue" }, "key"),
+    ).toMatchObject({ corrected: true, address: { street: "8935 SW 52nd Ave" } });
+  });
+
+  it("splits the unit back off the postal street line", async () => {
+    google({
+      uspsData: {
+        standardizedAddress: {
+          firstAddressLine: "1500 SW 1ST AVE APT 1201",
+          city: "PORTLAND",
+          zipCode: "97201",
+        },
+        dpvConfirmation: "Y",
+      },
+    });
+    const check = await checkAddress(
+      { street: "1500 SW First Ave", unit: "#1201", city: "Portland", zip: "97201" },
+      "key",
+    );
+    expect(check).toMatchObject({
+      corrected: false,
+      address: {
+        street: "1500 SW 1st Ave",
+        unit: "Apt 1201",
+        city: "Portland",
+        zip: "97201",
+        formatted: "1500 SW 1st Ave Apt 1201, Portland, OR 97201",
+      },
+    });
   });
 });

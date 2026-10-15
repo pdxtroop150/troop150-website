@@ -220,6 +220,50 @@ export function phoneDigits(phone: string): string {
     : digits;
 }
 
+function formatPhoneDigits(d: string): string {
+  if (d.length === 0) return "";
+  if (d.length <= 3) return `(${d}`;
+  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
+/**
+ * Formats a US phone number as it's typed: "(503", "(503) 555", then
+ * "(503) 555-0100", and says where the cursor belongs afterward so edits in
+ * the middle of the number keep their place. A leading +1 from autofill or
+ * pasting is dropped. If a backspace removed only punctuation, the digit
+ * before it goes too, so backspacing never gets stuck on ")" or "-".
+ */
+export function formatPhoneAsTyped(
+  value: string,
+  previous: string,
+  deleting: boolean,
+  caret: number = value.length,
+): { value: string; caret: number } {
+  let digitsBefore = value.slice(0, caret).replace(/\D/g, "").length;
+  let d = value.replace(/\D/g, "");
+  if (d.length > 10 && d.startsWith("1")) {
+    d = d.slice(1);
+    digitsBefore = Math.max(0, digitsBefore - 1);
+  }
+  d = d.slice(0, 10);
+  digitsBefore = Math.min(digitsBefore, d.length);
+  if (deleting && digitsBefore > 0 && d === previous.replace(/\D/g, "")) {
+    d = d.slice(0, digitsBefore - 1) + d.slice(digitsBefore);
+    digitsBefore -= 1;
+  }
+
+  const formatted = formatPhoneDigits(d);
+  let position = digitsBefore === 0 && formatted ? 1 : 0;
+  for (let i = 0, seen = 0; i < formatted.length && seen < digitsBefore; i++) {
+    if (/\d/.test(formatted[i])) {
+      seen += 1;
+      position = i + 1;
+    }
+  }
+  return { value: formatted, caret: position };
+}
+
 export function formatPhone(phone: string): string {
   const d = phoneDigits(phone);
   return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : phone;

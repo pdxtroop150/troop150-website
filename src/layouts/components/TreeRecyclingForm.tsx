@@ -3,6 +3,7 @@ import {
   MAX_INSTRUCTIONS_LENGTH,
   describeItems,
   formatDollars,
+  formatPhoneAsTyped,
   orderLines,
   orderTotalCents,
   requestsOpen,
@@ -10,21 +11,35 @@ import {
   validatePickupRequest,
   type PickupRequest,
 } from "@/lib/treeRecycling/settings";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const ADDRESS_FIELDS = ["street", "unit", "city", "zip"] as const;
 type FieldErrors = Partial<Record<keyof PickupRequest, string>>;
 
 interface CheckedAddress {
   formatted: string;
+  street: string;
+  unit: string;
+  city: string;
   zip: string;
 }
 
 type AddressResponse =
-  | { status: "in-area"; address: CheckedAddress; coverageNote?: string }
-  | { status: "out-of-area"; address: CheckedAddress; coverageNote?: string }
+  | {
+      status: "in-area" | "out-of-area";
+      address: CheckedAddress;
+      /** The postal address differs from what was typed; ask before using it. */
+      corrected: boolean;
+      coverageNote?: string;
+    }
   | { status: "not-found" }
   | { error: string };
+
+interface PendingCorrection {
+  typed: string;
+  suggested: CheckedAddress;
+  resolve: (accepted: boolean) => void;
+}
 
 const emptyRequest: PickupRequest = {
   name: "",
@@ -123,11 +138,33 @@ export default function TreeRecyclingForm() {
   const [address, setAddress] = useState<CheckedAddress | null>(null);
   const [addressNote, setAddressNote] = useState<React.ReactNode>(null);
   const [checkingAddress, setCheckingAddress] = useState(false);
+  // A suggested correction awaiting the customer's answer in the dialog.
+  const [correction, setCorrection] = useState<PendingCorrection | null>(null);
+  // The customer kept their address over our correction, so it can't be used.
+  const [declined, setDeclined] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   // The site is static, so whether requests are still open is decided in the browser.
   useEffect(() => {
     setOpen(requestsOpen(new Date()));
   }, []);
+
+  useEffect(() => {
+    if (correction && !dialogRef.current?.open) {
+      dialogRef.current?.showModal();
+    }
+  }, [correction]);
+
+  /** Show the suggested correction and wait for the customer's answer. */
+  function confirmCorrection(typed: string, suggested: CheckedAddress): Promise<boolean> {
+    return new Promise((resolve) => setCorrection({ typed, suggested, resolve }));
+  }
+
+  function answerCorrection(accepted: boolean) {
+    dialogRef.current?.close();
+    correction?.resolve(accepted);
+    setCorrection(null);
+  }
 
   function update<K extends keyof PickupRequest>(key: K, value: PickupRequest[K]) {
     setRequest((r) => ({ ...r, [key]: value }));
@@ -136,6 +173,7 @@ export default function TreeRecyclingForm() {
       // A changed address needs checking again.
       setAddress(null);
       setAddressNote(null);
+      setDeclined(false);
     }
   }
 
@@ -177,6 +215,32 @@ export default function TreeRecyclingForm() {
         .
       </span>
     );
+
+    if (!("error" in result) && result.status !== "not-found" && result.corrected) {
+      const typed = `${[request.street, request.unit].filter((p) => p.trim()).join(" ")}, ${request.city}, OR ${request.zip}`;
+      if (!(await confirmCorrection(typed, result.address))) {
+        setDeclined(true);
+        setAddressNote(
+          <>
+            <span className="text-red-700">
+              We couldn't confirm this address as entered, so we can't schedule a pickup
+              for it. Please correct it, or select Check address to see our suggested
+              address again.
+            </span>
+            {helpNote}
+          </>,
+        );
+        return null;
+      }
+    }
+
+    if (!("error" in result) && result.status !== "not-found") {
+      // Show the postal formatting in the form, so it matches what we'll save.
+      // Formatting-only changes like "blvd" -> "Blvd" need no confirmation.
+      const { street, unit, city, zip } = result.address;
+      setRequest((r) => ({ ...r, street, unit, city, zip }));
+      setErrors((e) => ({ ...e, street: undefined, unit: undefined, city: undefined, zip: undefined }));
+    }
 
     if ("error" in result) {
       setAddressNote(
@@ -238,7 +302,9 @@ export default function TreeRecyclingForm() {
       return;
     }
 
-    const checked = address ?? (await checkAddress());
+    // A declined correction blocks payment until the address is changed or the
+    // suggestion is accepted.
+    const checked = address ?? (declined ? null : await checkAddress());
     if (!checked) {
       document.getElementById("check-address")?.scrollIntoView({ block: "center" });
       return;
@@ -298,6 +364,7 @@ export default function TreeRecyclingForm() {
   );
 
   return (
+    <>
     <form
       id="pickup-form"
       className="not-prose rounded-lg border border-border p-6 md:p-8"
@@ -337,10 +404,24 @@ export default function TreeRecyclingForm() {
           <input
             id="phone"
             type="tel"
+            inputMode="tel"
             className={inputClass("phone")}
             autoComplete="tel-national"
+            maxLength={14}
             value={request.phone}
-            onChange={(e) => update("phone", e.target.value)}
+            onChange={(e) => {
+              const input = e.target;
+              const { value, caret } = formatPhoneAsTyped(
+                input.value,
+                request.phone,
+                (e.nativeEvent as InputEvent).inputType?.startsWith("delete") ?? false,
+                input.selectionStart ?? input.value.length,
+              );
+              update("phone", value);
+              // React sets the new value after this handler, so restore the
+              // cursor once it has.
+              requestAnimationFrame(() => input.setSelectionRange(caret, caret));
+            }}
             aria-describedby={describedBy("phone")}
           />
         </Field>
@@ -542,5 +623,49 @@ export default function TreeRecyclingForm() {
         .
       </p>
     </form>
+
+    <dialog
+      ref={dialogRef}
+      className="not-prose w-[calc(100%-2rem)] max-w-md rounded-lg border border-border p-6 text-text backdrop:bg-black/50"
+      aria-labelledby="correction-title"
+      onCancel={(e) => {
+        e.preventDefault();
+        answerCorrection(false);
+      }}
+    >
+      {correction && (
+        <>
+          <h3 id="correction-title" className="mb-3 text-h5 font-bold text-dark">
+            Confirm your address
+          </h3>
+          <p className="mb-4">
+            Postal records show a slightly different address than the one you entered.
+          </p>
+          <dl className="mb-6 space-y-3">
+            <div>
+              <dt className="text-sm font-semibold text-dark">You entered</dt>
+              <dd>{correction.typed}</dd>
+            </div>
+            <div>
+              <dt className="text-sm font-semibold text-dark">Suggested</dt>
+              <dd className="font-semibold text-dark">{correction.suggested.formatted}</dd>
+            </div>
+          </dl>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button type="button" className="btn btn-primary" onClick={() => answerCorrection(true)}>
+              Use suggested address
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-primary"
+              onClick={() => answerCorrection(false)}
+            >
+              Keep what I entered
+            </button>
+          </div>
+        </>
+      )}
+    </dialog>
+    </>
   );
 }
