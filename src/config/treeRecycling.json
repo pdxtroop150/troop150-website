@@ -1,0 +1,44 @@
+{
+  "season": "2026-2027",
+  "collectionDate": "2027-01-09",
+  "collectionDateLabel": "Saturday, January 9, 2027",
+  "collectionDateNote": "Depending on weather and other circumstances, pickup may be delayed overnight to Sunday, January 10, but we guarantee pickup that weekend.",
+  "curbDeadlineLabel": "9am on Saturday, January 9th",
+  "curbInstructions": "Please place your trees and wreaths by your curb by 9am on Saturday, January 9th, with all lights, ornaments, tinsel, and stands removed.",
+  "requestDeadline": "2027-01-07T23:59:59-08:00",
+  "requestDeadlineLabel": "Thursday, January 7, 2027",
+  "pricePerTreeDollars": 15,
+  "pricePerWreathDollars": 10,
+  "maxTrees": 10,
+  "maxWreaths": 10,
+  "maxAdditionalDonationDollars": 1000,
+  "supportEmail": "trees@troop150.org",
+  "referralSources": [
+    "Internet search",
+    "Door hanger",
+    "Sign on street",
+    "Metro website",
+    "Word of mouth",
+    "Email",
+    "Other"
+  ],
+  "zipCodes": {
+    "97034": "partial",
+    "97035": "full",
+    "97201": "partial",
+    "97219": "full",
+    "97221": "partial",
+    "97223": "partial",
+    "97229": "partial",
+    "97239": "full"
+  },
+  "dropOff": {
+    "location": "St. Andrews Presbyterian Church",
+    "address": "3228 SW Sunset Blvd, Portland, OR 97239",
+    "dates": "Saturdays and Sundays, January 2 through January 17, 2027",
+    "hours": "9 a.m. to 4 p.m.",
+    "venmoHandle": "",
+    "venmoQrImage": "",
+    "checksPayableTo": "Troop 150"
+  }
+}

@@ -60,6 +60,11 @@ export default defineConfig({
           target: 'http://localhost:8788',
           changeOrigin: true,
           secure: false,
+        },
+        '^/tree-recycling/.*': {
+          target: 'http://localhost:8788',
+          changeOrigin: true,
+          secure: false,
         }
       }
     }

@@ -1,0 +1,63 @@
+---
+// Square sends customers here after they pay for a pickup request.
+import Base from "@/layouts/Base.astro";
+import { settings } from "@/lib/treeRecycling/settings";
+---
+
+<Base title="Tree Pickup Confirmed" noindex>
+  <section class="section">
+    <div class="container">
+      <h1 class="h2 page-heading">Thank you!</h1>
+      <div class="content">
+        <p>
+          Your tree pickup request is complete. Square is emailing your receipt
+          now.
+        </p>
+        <div id="tree-request-details" hidden>
+          <p>
+            We'll pick up your <strong data-field="items"></strong> at
+            <strong data-field="address"></strong> on
+            <strong>{settings.collectionDateLabel}</strong>.
+          </p>
+        </div>
+        <p><small>{settings.collectionDateNote}</small></p>
+        <p>{settings.curbInstructions}</p>
+        <p>
+          Questions? Email <a href={`mailto:${settings.supportEmail}`}
+            >{settings.supportEmail}</a
+          >. Thank you for supporting Troop 150!
+        </p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { CONFIRMATION_STORAGE_KEY } from "@/lib/treeRecycling/settings";
+
+  function showDetails() {
+    const details = document.getElementById("tree-request-details");
+    if (!details) {
+      return;
+    }
+    try {
+      const saved = JSON.parse(
+        sessionStorage.getItem(CONFIRMATION_STORAGE_KEY) ?? "null",
+      );
+      if (!saved) {
+        return;
+      }
+      const set = (field: string, text: string) => {
+        const el = details.querySelector(`[data-field="${field}"]`);
+        if (el) el.textContent = text;
+      };
+      set("items", saved.items);
+      set("address", saved.address);
+      details.hidden = false;
+    } catch {
+      // Without saved details, the general message above is enough.
+    }
+  }
+
+  document.addEventListener("astro:page-load", showDetails);
+</script>
