@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildSettings,
   describeItems,
   orderLines,
   orderTotalCents,
@@ -140,11 +141,53 @@ describe("validatePickupRequest", () => {
   });
 });
 
+describe("buildSettings", () => {
+  const season = buildSettings({
+    collectionDate: "2027-01-09",
+    requestDeadline: "2027-01-07",
+    pricePerTreeDollars: 15,
+    pricePerWreathDollars: 10,
+  });
+
+  it("derives every date label from the two dates", () => {
+    expect(season.collectionDateLabel).toBe("Saturday, January 9, 2027");
+    expect(season.collectionDateNote).toBe(
+      "Depending on weather and other circumstances, pickup may be delayed overnight to Sunday, January 10, but we guarantee pickup that weekend.",
+    );
+    expect(season.curbDeadlineLabel).toBe("9am on Saturday, January 9th");
+    expect(season.curbInstructions).toContain("by your curb by 9am on Saturday, January 9th,");
+    expect(season.requestDeadlineLabel).toBe("Thursday, January 7, 2027");
+    expect(season.dropOffDatesLabel).toBe(
+      "Saturdays and Sundays, January 2 through January 17, 2027",
+    );
+  });
+
+  it("closes requests at the end of the deadline day, Pacific time", () => {
+    expect(new Date(season.requestDeadlineAt).toISOString()).toBe("2027-01-08T07:59:59.000Z");
+    expect(new Date(buildSettings({ ...season, requestDeadline: "2027-07-07" }).requestDeadlineAt).toISOString()).toBe(
+      "2027-07-08T06:59:59.000Z",
+    );
+  });
+
+  it("handles ordinals and drop-off weekends that start in December", () => {
+    const early = buildSettings({ ...season, collectionDate: "2028-01-02" });
+    expect(early.curbDeadlineLabel).toBe("9am on Sunday, January 2nd");
+    expect(early.dropOffDatesLabel).toBe(
+      "Saturdays and Sundays, December 26, 2027 through January 10, 2028",
+    );
+    expect(buildSettings({ ...season, collectionDate: "2028-01-11" }).curbDeadlineLabel).toBe(
+      "9am on Tuesday, January 11th",
+    );
+    expect(buildSettings({ ...season, collectionDate: "2028-01-23" }).curbDeadlineLabel).toBe(
+      "9am on Sunday, January 23rd",
+    );
+  });
+});
+
 describe("requestsOpen", () => {
-  it("accepts requests until the deadline", () => {
-    const deadline = new Date(settings.requestDeadline).getTime();
+  it("accepts requests through the end of the deadline day", () => {
     expect(requestsOpen(new Date("2026-12-01T12:00:00-08:00"))).toBe(true);
-    expect(requestsOpen(new Date(deadline))).toBe(true);
-    expect(requestsOpen(new Date(deadline + 1000))).toBe(false);
+    expect(requestsOpen(new Date("2027-01-07T23:59:00-08:00"))).toBe(true);
+    expect(requestsOpen(new Date("2027-01-08T00:00:01-08:00"))).toBe(false);
   });
 });

@@ -1,45 +1,124 @@
 // Season settings and rules shared by the pickup form (browser) and the
 // tree-recycling Pages Functions (server). Keep this file free of Astro-only
 // imports so Wrangler can bundle it.
-import settingsJson from "../../config/treeRecycling.json";
+import seasonConfig from "../../config/treeRecycling.json";
 
-export type ZipCoverage = "full" | "partial";
-
-export interface TreeRecyclingSettings {
-  season: string;
+/** The yearly values in src/config/treeRecycling.json. */
+export interface SeasonConfig {
+  /** Pickup day, "YYYY-MM-DD". Its year also names the sheet tabs. */
   collectionDate: string;
-  collectionDateLabel: string;
-  collectionDateNote: string;
-  /** Used in the receipt note, e.g. "9am on Saturday, January 9th". */
-  curbDeadlineLabel: string;
-  curbInstructions: string;
+  /** Last day to request a pickup, "YYYY-MM-DD"; requests close at midnight Pacific. */
   requestDeadline: string;
-  requestDeadlineLabel: string;
   pricePerTreeDollars: number;
   pricePerWreathDollars: number;
+}
+
+export interface TreeRecyclingSettings extends SeasonConfig {
+  /** "Saturday, January 9, 2027" */
+  collectionDateLabel: string;
+  collectionDateNote: string;
+  /** Used in the receipt note: "9am on Saturday, January 9th". */
+  curbDeadlineLabel: string;
+  curbInstructions: string;
+  /** When requests close, in milliseconds since 1970. */
+  requestDeadlineAt: number;
+  /** "Thursday, January 7, 2027" */
+  requestDeadlineLabel: string;
+  /** Drop-off runs from the weekend before pickup through the weekend after. */
+  dropOffDatesLabel: string;
   maxTrees: number;
   maxWreaths: number;
   maxAdditionalDonationDollars: number;
   supportEmail: string;
   /** Choices for "How did you hear about us?" */
   referralSources: string[];
-  zipCodes: Record<string, ZipCoverage>;
-  dropOff: {
-    location: string;
-    address: string;
-    dates: string;
-    hours: string;
-    venmoHandle: string;
-    venmoQrImage: string;
-    checksPayableTo: string;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** A "YYYY-MM-DD" date plus some days, as a UTC Date (time of day ignored). */
+function day(date: string, plusDays = 0): Date {
+  return new Date(Date.parse(`${date}T00:00:00Z`) + plusDays * DAY_MS);
+}
+
+function format(date: Date, options: Intl.DateTimeFormatOptions): string {
+  return date.toLocaleDateString("en-US", { timeZone: "UTC", ...options });
+}
+
+function ordinal(n: number): string {
+  const suffix = n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] ?? "th";
+  return `${n}${suffix}`;
+}
+
+/** The last second of a "YYYY-MM-DD" day in Portland, whether PST or PDT. */
+function endOfPacificDay(date: string): number {
+  for (const offset of ["-08:00", "-07:00"]) {
+    const at = Date.parse(`${date}T23:59:59${offset}`);
+    const hour = new Date(at).toLocaleString("en-US", {
+      timeZone: "America/Los_Angeles",
+      hour: "numeric",
+      hourCycle: "h23",
+    });
+    if (hour === "23") {
+      return at;
+    }
+  }
+  return Date.parse(`${date}T23:59:59-08:00`);
+}
+
+/** Everything the site shows or enforces, derived from the yearly config. */
+export function buildSettings(config: SeasonConfig): TreeRecyclingSettings {
+  const pickup = day(config.collectionDate);
+  const weekdayMonth = { weekday: "long", month: "long" } as const;
+  const curbDeadlineLabel =
+    `9am on ${format(pickup, { weekday: "long" })}, ` +
+    `${format(pickup, { month: "long" })} ${ordinal(pickup.getUTCDate())}`;
+  const dropOffStart = day(config.collectionDate, -7);
+  const dropOffEnd = day(config.collectionDate, 8);
+  const sameYear = dropOffStart.getUTCFullYear() === dropOffEnd.getUTCFullYear();
+
+  return {
+    ...config,
+    collectionDateLabel: format(pickup, { ...weekdayMonth, day: "numeric", year: "numeric" }),
+    collectionDateNote:
+      "Depending on weather and other circumstances, pickup may be delayed overnight to " +
+      `${format(day(config.collectionDate, 1), { ...weekdayMonth, day: "numeric" })}, ` +
+      "but we guarantee pickup that weekend.",
+    curbDeadlineLabel,
+    curbInstructions:
+      `Please place your trees and wreaths by your curb by ${curbDeadlineLabel}, ` +
+      "with all lights, ornaments, tinsel, and stands removed.",
+    requestDeadlineAt: endOfPacificDay(config.requestDeadline),
+    requestDeadlineLabel: format(day(config.requestDeadline), {
+      ...weekdayMonth,
+      day: "numeric",
+      year: "numeric",
+    }),
+    dropOffDatesLabel:
+      "Saturdays and Sundays, " +
+      `${format(dropOffStart, { month: "long", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) })} ` +
+      `through ${format(dropOffEnd, { month: "long", day: "numeric", year: "numeric" })}`,
+    maxTrees: 10,
+    maxWreaths: 10,
+    maxAdditionalDonationDollars: 1000,
+    supportEmail: "trees@troop150.org",
+    referralSources: [
+      "Internet search",
+      "Door hanger",
+      "Sign on street",
+      "Metro website",
+      "Word of mouth",
+      "Email",
+      "Other",
+    ],
   };
 }
 
-export const settings = settingsJson as TreeRecyclingSettings;
+export const settings = buildSettings(seasonConfig as SeasonConfig);
 
-/** Pickup requests are accepted until the request deadline. */
+/** Pickup requests are accepted until the end of the request deadline day. */
 export function requestsOpen(now: Date, s: TreeRecyclingSettings = settings): boolean {
-  return now.getTime() <= new Date(s.requestDeadline).getTime();
+  return now.getTime() <= s.requestDeadlineAt;
 }
 
 export interface PickupRequest {

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Builds src/config/treeRecyclingServiceArea.json for the partial ZIP codes.
+"""Builds src/config/treeRecyclingServiceArea.json, the pickup service area.
+
+The output lists the ZIP codes served in full, plus a polygon for each ZIP
+code served only in part.
 
 Each polygon is the side of the boundary roads or water that we serve,
 clipped to the ZIP code plus a margin. The website also
@@ -31,6 +34,8 @@ ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / "src/config/treeRecyclingServiceArea.json"
 CACHE = Path(tempfile.gettempdir()) / "troop150-service-area"
 USER_AGENT = "troop150-website service area builder"
+# Every ZIP code we serve. Those with a boundary below are served only on one
+# side of it; the rest are served in full.
 ZIPS = ["97034", "97035", "97201", "97219", "97221", "97223", "97229", "97239"]
 
 OVERPASS_QUERY = """[out:json][timeout:60];(
@@ -208,7 +213,11 @@ def main():
             "properties": {"zip": z, "description": description},
             "geometry": geometry,
         })
-    result = {"type": "FeatureCollection", "features": features}
+    result = {
+        "type": "FeatureCollection",
+        "fullZipCodes": [z for z in ZIPS if z not in boundaries],
+        "features": features,
+    }
     OUTPUT.write_text(json.dumps(result, separators=(",", ":")) + "\n")
     print(f"Wrote {OUTPUT.relative_to(ROOT)}")
 
