@@ -6,15 +6,17 @@ import {
   formatPhoneAsTyped,
   orderLines,
   orderTotalCents,
-  requestsOpen,
+  prices,
+  serviceOpen,
   settings,
-  validatePickupRequest,
-  type PickupRequest,
+  validateRequest,
+  type RecyclingRequest,
+  type Service,
 } from "@/lib/treeRecycling/settings";
 import React, { useEffect, useRef, useState } from "react";
 
 const ADDRESS_FIELDS = ["street", "unit", "city", "zip"] as const;
-type FieldErrors = Partial<Record<keyof PickupRequest, string>>;
+type FieldErrors = Partial<Record<keyof RecyclingRequest, string>>;
 
 interface CheckedAddress {
   formatted: string;
@@ -41,10 +43,11 @@ interface PendingCorrection {
   resolve: (accepted: boolean) => void;
 }
 
-const emptyRequest: PickupRequest = {
+const emptyRequest: RecyclingRequest = {
   name: "",
   email: "",
   phone: "",
+  service: "",
   street: "",
   unit: "",
   city: "",
@@ -68,9 +71,10 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-function OrderSummary({ request }: { request: PickupRequest }) {
+function OrderSummary({ request, service }: { request: RecyclingRequest; service: Service }) {
   const lines = orderLines({
     ...request,
+    service,
     additionalDonationDollars: Number.isFinite(request.additionalDonationDollars)
       ? request.additionalDonationDollars
       : 0,
@@ -129,8 +133,10 @@ function Field({
 }
 
 export default function TreeRecyclingForm() {
-  const [open, setOpen] = useState<boolean | null>(null);
-  const [request, setRequest] = useState<PickupRequest>(emptyRequest);
+  // Which services are still taking requests; decided in the browser because
+  // the site is static.
+  const [open, setOpen] = useState<Record<Service, boolean> | null>(null);
+  const [request, setRequest] = useState<RecyclingRequest>(emptyRequest);
   const [donationText, setDonationText] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [message, setMessage] = useState<React.ReactNode>(null);
@@ -144,9 +150,9 @@ export default function TreeRecyclingForm() {
   const [declined, setDeclined] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
-  // The site is static, so whether requests are still open is decided in the browser.
   useEffect(() => {
-    setOpen(requestsOpen(new Date()));
+    const now = new Date();
+    setOpen({ pickup: serviceOpen("pickup", now), dropoff: serviceOpen("dropoff", now) });
   }, []);
 
   useEffect(() => {
@@ -166,7 +172,7 @@ export default function TreeRecyclingForm() {
     setCorrection(null);
   }
 
-  function update<K extends keyof PickupRequest>(key: K, value: PickupRequest[K]) {
+  function update<K extends keyof RecyclingRequest>(key: K, value: RecyclingRequest[K]) {
     setRequest((r) => ({ ...r, [key]: value }));
     setErrors((e) => ({ ...e, [key]: undefined }));
     if ((ADDRESS_FIELDS as readonly string[]).includes(key)) {
@@ -188,7 +194,7 @@ export default function TreeRecyclingForm() {
   /** Standardize the address and check the service area. */
   async function checkAddress(): Promise<CheckedAddress | null> {
     setMessage(null);
-    const all = validatePickupRequest(request);
+    const all = validateRequest(request);
     const found: FieldErrors = Object.fromEntries(
       ADDRESS_FIELDS.filter((f) => all[f]).map((f) => [f, all[f]]),
     );
@@ -265,7 +271,7 @@ export default function TreeRecyclingForm() {
             {result.coverageNote
               ? ` (in ZIP code ${result.address.zip}, we serve only addresses ${result.coverageNote})`
               : ""}
-            . You're welcome to drop your tree off instead; see the details below.
+            . You're welcome to choose drop-off instead.
           </span>
           {helpNote}
         </>,
@@ -296,18 +302,21 @@ export default function TreeRecyclingForm() {
   async function submit(event: React.SyntheticEvent) {
     event.preventDefault();
     setMessage(null);
-    const found = validatePickupRequest(request);
+    const found = validateRequest(request);
     setErrors(found);
     if (focusFirst(found)) {
       return;
     }
 
-    // A declined correction blocks payment until the address is changed or the
-    // suggestion is accepted.
-    const checked = address ?? (declined ? null : await checkAddress());
-    if (!checked) {
-      document.getElementById("check-address")?.scrollIntoView({ block: "center" });
-      return;
+    // Pickups need a checked address. A declined correction blocks payment
+    // until the address is changed or the suggestion is accepted.
+    let checked: CheckedAddress | null = null;
+    if (request.service === "pickup") {
+      checked = address ?? (declined ? null : await checkAddress());
+      if (!checked) {
+        document.getElementById("check-address")?.scrollIntoView({ block: "center" });
+        return;
+      }
     }
 
     setBusy(true);
@@ -321,7 +330,8 @@ export default function TreeRecyclingForm() {
         localStorage.setItem(
           CONFIRMATION_STORAGE_KEY,
           JSON.stringify({
-            address: checked.formatted,
+            service: request.service,
+            address: checked?.formatted ?? "",
             items: describeItems(request.trees, request.wreaths),
             savedAt: Date.now(),
           }),
@@ -343,18 +353,18 @@ export default function TreeRecyclingForm() {
   if (open === null) {
     return null;
   }
-  if (!open) {
+  if (!open.pickup && !open.dropoff) {
     return (
-      <div className="notice info not-prose rounded-lg border border-border p-6">
-        Pickup requests for {settings.collectionDateLabel} are closed. You can still drop your
-        tree off; see the details below.
+      <div className="not-prose rounded-lg border border-border bg-theme-light p-6">
+        Tree recycling is over for this season. Thank you for supporting Troop 150!
       </div>
     );
   }
+  const service = request.service || null;
 
-  const inputClass = (field: keyof PickupRequest) =>
+  const inputClass = (field: keyof RecyclingRequest) =>
     `form-input w-full ${errors[field] ? "border-red-700" : ""}`;
-  const describedBy = (field: keyof PickupRequest) =>
+  const describedBy = (field: keyof RecyclingRequest) =>
     errors[field] ? `${field}-error` : undefined;
 
   const messageBox = message && (
@@ -371,7 +381,7 @@ export default function TreeRecyclingForm() {
       onSubmit={submit}
       noValidate
     >
-      <h3 className="mb-4 text-h4 font-bold text-dark">Request a pickup</h3>
+      <h3 className="mb-4 text-h4 font-bold text-dark">Request a pickup or prepay a drop-off</h3>
 
       <Field label="Name" name="name" error={errors.name}>
         <input
@@ -399,7 +409,7 @@ export default function TreeRecyclingForm() {
           label="Phone"
           name="phone"
           error={errors.phone}
-          hint="Only used if we have trouble finding your tree."
+          hint="Only used if we need to reach you about your request."
         >
           <input
             id="phone"
@@ -427,6 +437,62 @@ export default function TreeRecyclingForm() {
         </Field>
       </div>
 
+      <fieldset className="mb-6">
+        <legend className="mb-2 block font-semibold text-dark">Pickup or drop-off?</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(["pickup", "dropoff"] as const).map((option) => {
+            const { treeDollars, wreathDollars } = prices(option);
+            const available = open[option];
+            const chosen = request.service === option;
+            return (
+              <label
+                key={option}
+                className={`flex cursor-pointer gap-3 rounded-lg border p-4 transition ${
+                  chosen ? "border-primary bg-theme-light" : "border-border"
+                } ${available ? "hover:border-primary" : "cursor-not-allowed opacity-60"}`}
+              >
+                <input
+                  type="radio"
+                  name="service"
+                  value={option}
+                  className="mt-1 text-primary focus:ring-primary"
+                  checked={chosen}
+                  disabled={!available}
+                  onChange={() => update("service", option)}
+                  aria-describedby={describedBy("service")}
+                />
+                <span>
+                  <span className="block font-semibold text-dark">
+                    {option === "pickup" ? "Curbside pickup" : `Drop-off at ${settings.dropOffLocation}`}
+                  </span>
+                  <span className="block text-sm">
+                    {option === "pickup"
+                      ? settings.collectionDateLabel
+                      : `${settings.dropOffShortDatesLabel} (weekends)`}
+                  </span>
+                  <span className="block text-sm">
+                    {available
+                      ? treeDollars === wreathDollars
+                        ? `$${treeDollars} per tree or wreath`
+                        : `$${treeDollars} per tree, $${wreathDollars} per wreath`
+                      : option === "pickup"
+                        ? `Pickup requests closed ${settings.requestDeadlineLabel}.`
+                        : "Drop-off prepayment is closed."}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+        {errors.service && (
+          <p id="service-error" className="mt-1 text-sm text-red-700" role="alert">
+            {errors.service}
+          </p>
+        )}
+      </fieldset>
+
+      {service === "pickup" && (
+      <>
       <Field label="Street address" name="street" error={errors.street}>
         <input
           id="street"
@@ -504,6 +570,24 @@ export default function TreeRecyclingForm() {
         />
       </Field>
 
+      </>
+      )}
+
+      {service === "dropoff" && (
+        <div className="mb-6 rounded-md bg-theme-light p-4">
+          <p className="font-semibold text-dark">
+            Bring your trees and wreaths to {settings.dropOffLocation}
+          </p>
+          <p className="mt-1 text-sm">
+            {settings.dropOffAddress}, from {settings.dropOffHours}, {settings.dropOffDatesLabel}.
+            Please remove all lights, ornaments, tinsel, and stands, and show your receipt at the
+            lot.
+          </p>
+        </div>
+      )}
+
+      {service && (
+      <>
       <Field label="How did you hear about us?" name="referral" error={errors.referral}>
         <select
           id="referral"
@@ -529,7 +613,7 @@ export default function TreeRecyclingForm() {
           label="Trees"
           name="trees"
           error={errors.trees}
-          hint={`$${settings.pricePerTreeDollars} each`}
+          hint={`$${prices(service).treeDollars} each`}
         >
           <select
             id="trees"
@@ -549,7 +633,7 @@ export default function TreeRecyclingForm() {
           label="Wreaths"
           name="wreaths"
           error={errors.wreaths}
-          hint={`$${settings.pricePerWreathDollars} each`}
+          hint={`$${prices(service).wreathDollars} each`}
         >
           <select
             id="wreaths"
@@ -591,13 +675,15 @@ export default function TreeRecyclingForm() {
         </Field>
       </div>
 
-      <OrderSummary request={request} />
+      <OrderSummary request={request} service={service} />
 
-      <div className="mb-6 rounded-md bg-theme-light p-4">
-        <p className="font-semibold text-dark">Collection date: {settings.collectionDateLabel}</p>
-        <p className="mt-1 text-sm">{settings.collectionDateNote}</p>
-        <p className="mt-2 text-sm">{settings.curbInstructions}</p>
-      </div>
+      {service === "pickup" && (
+        <div className="mb-6 rounded-md bg-theme-light p-4">
+          <p className="font-semibold text-dark">Collection date: {settings.collectionDateLabel}</p>
+          <p className="mt-1 text-sm">{settings.collectionDateNote}</p>
+          <p className="mt-2 text-sm">{settings.curbInstructions}</p>
+        </div>
+      )}
 
       {messageBox}
       <button
@@ -615,8 +701,10 @@ export default function TreeRecyclingForm() {
         Square accepts Apple Pay, Google Pay, and credit or debit cards. Your request is
         complete once payment goes through.
       </p>
+      </>
+      )}
       <p className="mt-3 text-sm">
-        Requests close {settings.requestDeadlineLabel}. Questions? Email{" "}
+        Pickup requests close {settings.requestDeadlineLabel}. Questions? Email{" "}
         <a className="text-primary underline" href={`mailto:${settings.supportEmail}`}>
           {settings.supportEmail}
         </a>

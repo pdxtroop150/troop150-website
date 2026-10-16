@@ -7,25 +7,26 @@ import TreeRecyclingForm from '@/components/TreeRecyclingForm';
 import { settings } from '@/lib/treeRecycling/settings';
 
 Let Troop 150 recycle your Christmas tree and wreaths while supporting our
-scouts! Request a curbside pickup below, or bring them to our drop-off lot.
+scouts! Request a curbside pickup, or bring them to our drop-off lot.
 
 ## Curbside pickup
 
 We pick up trees on **{settings.collectionDateLabel}**.
-{settings.collectionDateNote} We collect trees in SW and NW Portland.
-
-<TreeRecyclingForm client:load />
+{settings.collectionDateNote} We collect trees in SW and NW Portland. Pickup is
+${settings.pickupTreeDollars} per tree and ${settings.pickupWreathDollars} per wreath; request it below by
+{settings.requestDeadlineLabel}.
 
 ## Drop-off
 
-Bring your tree or wreaths to **St. Andrews Presbyterian Church** (3228 SW
-Sunset Blvd, Portland, OR 97239) from 9 a.m. to 4 p.m.,
+Bring your trees or wreaths to **{settings.dropOffLocation}**
+({settings.dropOffAddress}) from {settings.dropOffHours},
 {settings.dropOffDatesLabel}. Please remove all lights, ornaments, tinsel, and
 stands.
 
-Drop-off is ${settings.pricePerTreeDollars} per tree and ${settings.pricePerWreathDollars} per wreath. Pay at
-the lot with Venmo, cash, or a check made out to Troop 150. The Venmo QR code
-is set to ${settings.pricePerTreeDollars} for one tree; change the amount if you're dropping off more.
-No reservation is needed.
+Drop-off is ${settings.dropOffTreeDollars} per tree and ${settings.dropOffWreathDollars} per wreath. Prepay below and show
+your receipt at the lot, or pay there with Venmo, cash, or a check made out to
+Troop 150. No reservation is needed.
+
+<TreeRecyclingForm client:load />
 
 Thanks for supporting Troop 150/5150!

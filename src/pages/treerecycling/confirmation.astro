@@ -1,31 +1,35 @@
 ---
-// Square sends customers here after they pay for a pickup request.
+// Square sends customers here after they pay for a pickup or drop-off.
 import Base from "@/layouts/Base.astro";
 import { settings } from "@/lib/treeRecycling/settings";
 ---
 
-<Base title="Tree Pickup Confirmed" noindex>
+<Base title="Tree Recycling Confirmed" noindex>
   <section class="section">
     <div class="container">
       <h1 class="h2 page-heading">Thank you!</h1>
       <div class="content">
         <p>
-          Your tree pickup request is complete. Square is emailing your receipt
-          now.
+          Your tree recycling request is complete. Square is emailing your
+          receipt now.
         </p>
-        <p>
-          <span id="tree-request-details" hidden>
-            Please put your <strong data-field="items"></strong> by your curb at
-            <strong data-field="address"></strong> by
-            <strong>{settings.curbDeadlineLabel}</strong> for pickup, with lights,
-            ornaments, tinsel, and stands removed.
-          </span>
-          <span id="tree-request-general">
-            Please place your trees and wreaths by your curb by
-            <strong>{settings.curbDeadlineLabel}</strong> for pickup, with lights,
-            ornaments, tinsel, and stands removed.
-          </span>
+        <p id="tree-request-pickup" hidden>
+          Please put your <strong data-field="items"></strong> by your curb at
+          <strong data-field="address"></strong> by
+          <strong>{settings.curbDeadlineLabel}</strong> for pickup, with lights,
+          ornaments, tinsel, and stands removed.
           {settings.collectionDateNote}
+        </p>
+        <p id="tree-request-dropoff" hidden>
+          Please bring your <strong data-field="items"></strong> to
+          <strong>{settings.dropOffLocation}</strong> ({settings.dropOffAddress})
+          from {settings.dropOffHours},
+          <strong>{settings.dropOffDatesLabel}</strong>, with lights, ornaments,
+          tinsel, and stands removed, and show your receipt at the lot.
+        </p>
+        <p id="tree-request-general">
+          Your receipt says when and where to put out or bring your trees and
+          wreaths.
         </p>
         <p>
           Questions? Email <a href={`mailto:${settings.supportEmail}`}
@@ -44,10 +48,6 @@ import { settings } from "@/lib/treeRecycling/settings";
   } from "@/lib/treeRecycling/settings";
 
   function showDetails() {
-    const details = document.getElementById("tree-request-details");
-    if (!details) {
-      return;
-    }
     try {
       const saved = JSON.parse(
         localStorage.getItem(CONFIRMATION_STORAGE_KEY) ?? "null",
@@ -60,6 +60,12 @@ import { settings } from "@/lib/treeRecycling/settings";
         localStorage.removeItem(CONFIRMATION_STORAGE_KEY);
         return;
       }
+      // Requests saved before drop-offs existed were all pickups.
+      const service = saved.service === "dropoff" ? "dropoff" : "pickup";
+      const details = document.getElementById(`tree-request-${service}`);
+      if (!details) {
+        return;
+      }
       const set = (field: string, text: string) => {
         const el = details.querySelector(`[data-field="${field}"]`);
         if (el) el.textContent = text;
@@ -67,10 +73,9 @@ import { settings } from "@/lib/treeRecycling/settings";
       set("items", saved.items);
       set("address", saved.address);
       details.hidden = false;
-      // The details sentence already includes the curb instructions.
       document.getElementById("tree-request-general")?.setAttribute("hidden", "");
     } catch {
-      // Without saved details, the general message above is enough.
+      // Without saved details, the general message is enough.
     }
   }
 

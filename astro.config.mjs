@@ -52,6 +52,12 @@ export default defineConfig({
     extendDefaultPlugins: true,
   },
   vite: {
+    // Prebundle React's runtimes up front. When Vite discovers them later, it
+    // rebuilds its dependency cache mid-load and pages can fail with
+    // "jsxDEV is not a function" until node_modules/.vite is cleared.
+    optimizeDeps: {
+      include: ["react", "react-dom", "react-dom/client", "react/jsx-runtime", "react/jsx-dev-runtime"],
+    },
     server: {
       proxy: {
         // Add routes here to proxy to Cloudflare Pages functions (those in the

@@ -76,6 +76,8 @@ export const onRequestPost: PagesFunction<TreeRecyclingEnv> = async ({ request, 
     const added = await appendRequestRow(env, sheetTabName(isProduction(env)), {
       "Square Order ID": order.id,
       "Paid At": payment.updated_at,
+      // Orders from before drop-offs existed have no service; they were pickups.
+      Type: m.service === "dropoff" ? "Drop-off" : "Pickup",
       Name: m.name ?? "",
       Email: m.email ?? "",
       Phone: m.phone ?? "",

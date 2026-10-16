@@ -1,7 +1,7 @@
 ---
 import Logo from "@/components/Logo.astro";
 import menu from "@/config/menu.json";
-import { requestsOpen, settings } from "@/lib/treeRecycling/settings";
+import { formClosesAt } from "@/lib/treeRecycling/settings";
 import { IoSearch } from "react-icons/io5";
 
 export interface ChildNavigationLink {
@@ -25,11 +25,11 @@ const { main }: { main: NavigationLink[] } = menu;
 
 // The site is static, so the script below re-decides in the browser; this
 // build-time guess just avoids a flicker for most visitors.
-const treeRequests = requestsOpen(new Date()) ? "open" : "closed";
+const treeRequests = Date.now() <= formClosesAt() ? "open" : "closed";
 ---
 
 <header class="header pt-6" data-tree-requests={treeRequests}>
-  <script is:inline define:vars={{ deadlineAt: settings.requestDeadlineAt }}>
+  <script is:inline define:vars={{ deadlineAt: formClosesAt() }}>
     // Runs as the header loads, so the right menu shows without a flicker.
     // The site swaps pages without reloading (Astro's ClientRouter), which
     // doesn't rerun this script, so also apply it after each swap.

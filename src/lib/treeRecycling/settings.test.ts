@@ -4,19 +4,21 @@ import {
   describeItems,
   formatPhoneAsTyped,
   orderLines,
+  formClosesAt,
+  itemNote,
   orderTotalCents,
-  pickupNote,
-  requestsOpen,
+  serviceOpen,
   sheetTabName,
   settings,
-  validatePickupRequest,
-  type PickupRequest,
+  validateRequest,
+  type RecyclingRequest,
 } from "./settings";
 
-const valid: PickupRequest = {
+const valid: RecyclingRequest = {
   name: "Pat Scout",
   email: "pat@example.com",
   phone: "(503) 555-0100",
+  service: "pickup",
   street: "123 SW Main St",
   unit: "",
   city: "Portland",
@@ -29,36 +31,58 @@ const valid: PickupRequest = {
 };
 
 describe("orderLines", () => {
-  it("charges $15 per tree and $10 per wreath", () => {
-    const lines = orderLines({ trees: 2, wreaths: 3, additionalDonationDollars: 0 });
+  it("charges pickup prices for a pickup", () => {
+    const lines = orderLines({ service: "pickup", trees: 2, wreaths: 3, additionalDonationDollars: 0 });
     expect(lines).toEqual([
-      { kind: "tree", name: "Tree pickup", quantity: 2, unitCents: 1500 },
-      { kind: "wreath", name: "Wreath pickup", quantity: 3, unitCents: 1000 },
+      { kind: "tree", name: "Tree pickup", quantity: 2, unitCents: 2000 },
+      { kind: "wreath", name: "Wreath pickup", quantity: 3, unitCents: 1500 },
     ]);
-    expect(orderTotalCents(lines)).toBe(6000);
+    expect(orderTotalCents(lines)).toBe(8500);
+  });
+
+  it("charges drop-off prices for a drop-off", () => {
+    const lines = orderLines({ service: "dropoff", trees: 2, wreaths: 1, additionalDonationDollars: 0 });
+    expect(lines).toEqual([
+      { kind: "tree", name: "Tree drop-off", quantity: 2, unitCents: 1500 },
+      { kind: "wreath", name: "Wreath drop-off", quantity: 1, unitCents: 1500 },
+    ]);
+    expect(orderTotalCents(lines)).toBe(4500);
+  });
+
+  it("uses the configured prices", () => {
+    const custom = { ...settings, pickupTreeDollars: 25, dropOffWreathDollars: 12 };
+    expect(orderLines({ service: "pickup", trees: 1, wreaths: 0, additionalDonationDollars: 0 }, custom)[0].unitCents).toBe(2500);
+    expect(orderLines({ service: "dropoff", trees: 0, wreaths: 1, additionalDonationDollars: 0 }, custom)[0].unitCents).toBe(1200);
   });
 
   it("adds an additional donation line only when it is above zero", () => {
-    const lines = orderLines({ trees: 1, wreaths: 0, additionalDonationDollars: 5.25 });
+    const lines = orderLines({ service: "pickup", trees: 1, wreaths: 0, additionalDonationDollars: 5.25 });
     expect(lines.map((l) => l.kind)).toEqual(["tree", "donation"]);
-    expect(orderTotalCents(lines)).toBe(2025);
+    expect(orderTotalCents(lines)).toBe(2525);
   });
 
   it("allows wreaths without trees", () => {
-    const lines = orderLines({ trees: 0, wreaths: 1, additionalDonationDollars: 0 });
+    const lines = orderLines({ service: "dropoff", trees: 0, wreaths: 1, additionalDonationDollars: 0 });
     expect(lines.map((l) => l.kind)).toEqual(["wreath"]);
   });
 });
 
-describe("pickupNote", () => {
-  const address = "3228 SW Sunset Blvd, Portland, OR 97239";
-  it("tells the customer where and when to put items out", () => {
-    const [trees, wreath] = orderLines({ trees: 2, wreaths: 1, additionalDonationDollars: 0 });
-    expect(pickupNote(trees, address)).toBe(
-      "Please place your trees by your curb at 3228 SW Sunset Blvd, Portland, OR 97239 by 9am on Saturday, January 9th for pickup.",
+describe("itemNote", () => {
+  const address = "8935 SW 52nd Ave, Portland, OR 97219";
+  it("tells pickup customers where and when to put items out", () => {
+    const [trees, wreath] = orderLines({ service: "pickup", trees: 2, wreaths: 1, additionalDonationDollars: 0 });
+    expect(itemNote(trees, "pickup", address)).toBe(
+      "Please place your trees by your curb at 8935 SW 52nd Ave, Portland, OR 97219 by 9am on Saturday, January 9th for pickup.",
     );
-    expect(pickupNote(wreath, address)).toBe(
-      "Please place your wreath by your curb at 3228 SW Sunset Blvd, Portland, OR 97239 by 9am on Saturday, January 9th for pickup.",
+    expect(itemNote(wreath, "pickup", address)).toBe(
+      "Please place your wreath by your curb at 8935 SW 52nd Ave, Portland, OR 97219 by 9am on Saturday, January 9th for pickup.",
+    );
+  });
+
+  it("tells drop-off customers where and when to bring items", () => {
+    const [tree] = orderLines({ service: "dropoff", trees: 1, wreaths: 0, additionalDonationDollars: 0 });
+    expect(itemNote(tree, "dropoff", "")).toBe(
+      "Please bring your tree to St. Andrews Presbyterian Church (3228 SW Sunset Blvd, Portland, OR 97239) from 9am to 4pm, Saturdays and Sundays, January 2 through January 17, 2027, and show this receipt.",
     );
   });
 });
@@ -124,55 +148,65 @@ describe("describeItems", () => {
   });
 });
 
-describe("validatePickupRequest", () => {
+describe("validateRequest", () => {
   it("accepts a complete request", () => {
-    expect(validatePickupRequest(valid)).toEqual({});
+    expect(validateRequest(valid)).toEqual({});
   });
 
   it("accepts an additional donation with cents", () => {
-    expect(validatePickupRequest({ ...valid, additionalDonationDollars: 5.1 })).toEqual({});
+    expect(validateRequest({ ...valid, additionalDonationDollars: 5.1 })).toEqual({});
   });
 
   it("requires an additional donation amount, even if it is 0", () => {
-    expect(validatePickupRequest({ ...valid, additionalDonationDollars: NaN })).toHaveProperty(
+    expect(validateRequest({ ...valid, additionalDonationDollars: NaN })).toHaveProperty(
       "additionalDonationDollars",
     );
   });
 
   it("rejects negative, fractional-cent, and too-large additional donations", () => {
     for (const additionalDonationDollars of [-1, 1.005, settings.maxAdditionalDonationDollars + 1]) {
-      expect(validatePickupRequest({ ...valid, additionalDonationDollars })).toHaveProperty(
+      expect(validateRequest({ ...valid, additionalDonationDollars })).toHaveProperty(
         "additionalDonationDollars",
       );
     }
   });
 
   it("requires at least one tree or wreath", () => {
-    expect(validatePickupRequest({ ...valid, trees: 0, wreaths: 0 })).toHaveProperty("trees");
-    expect(validatePickupRequest({ ...valid, trees: 0, wreaths: 1 })).toEqual({});
+    expect(validateRequest({ ...valid, trees: 0, wreaths: 0 })).toHaveProperty("trees");
+    expect(validateRequest({ ...valid, trees: 0, wreaths: 1 })).toEqual({});
   });
 
   it("rejects bad tree and wreath counts", () => {
     for (const trees of [-1, 1.5, settings.maxTrees + 1, NaN]) {
-      expect(validatePickupRequest({ ...valid, trees })).toHaveProperty("trees");
+      expect(validateRequest({ ...valid, trees })).toHaveProperty("trees");
     }
     for (const wreaths of [-1, 1.5, settings.maxWreaths + 1, NaN]) {
-      expect(validatePickupRequest({ ...valid, wreaths })).toHaveProperty("wreaths");
+      expect(validateRequest({ ...valid, wreaths })).toHaveProperty("wreaths");
     }
   });
 
   it("requires a known referral source", () => {
-    expect(validatePickupRequest({ ...valid, referral: "" })).toHaveProperty("referral");
-    expect(validatePickupRequest({ ...valid, referral: "Billboard" })).toHaveProperty("referral");
-    expect(validatePickupRequest({ ...valid, referral: "Other" })).toEqual({});
+    expect(validateRequest({ ...valid, referral: "" })).toHaveProperty("referral");
+    expect(validateRequest({ ...valid, referral: "Billboard" })).toHaveProperty("referral");
+    expect(validateRequest({ ...valid, referral: "Other" })).toEqual({});
   });
 
   it("accepts a phone number with a leading 1", () => {
-    expect(validatePickupRequest({ ...valid, phone: "+1 503 555 0100" })).toEqual({});
+    expect(validateRequest({ ...valid, phone: "+1 503 555 0100" })).toEqual({});
+  });
+
+  it("requires choosing pickup or drop-off", () => {
+    expect(validateRequest({ ...valid, service: "" })).toHaveProperty("service");
+  });
+
+  it("doesn't need an address for a drop-off", () => {
+    expect(
+      validateRequest({ ...valid, service: "dropoff", street: "", city: "", zip: "", instructions: "x".repeat(300) }),
+    ).toEqual({});
   });
 
   it("rejects missing contact and address fields", () => {
-    const errors = validatePickupRequest({
+    const errors = validateRequest({
       ...valid,
       name: " ",
       email: "pat",
@@ -191,8 +225,10 @@ describe("buildSettings", () => {
   const season = buildSettings({
     collectionDate: "2027-01-09",
     requestDeadline: "2027-01-07",
-    pricePerTreeDollars: 15,
-    pricePerWreathDollars: 10,
+    pickupTreeDollars: 20,
+    pickupWreathDollars: 15,
+    dropOffTreeDollars: 15,
+    dropOffWreathDollars: 15,
   });
 
   it("derives every date label from the two dates", () => {
@@ -230,10 +266,20 @@ describe("buildSettings", () => {
   });
 });
 
-describe("requestsOpen", () => {
-  it("accepts requests through the end of the deadline day", () => {
-    expect(requestsOpen(new Date("2026-12-01T12:00:00-08:00"))).toBe(true);
-    expect(requestsOpen(new Date("2027-01-07T23:59:00-08:00"))).toBe(true);
-    expect(requestsOpen(new Date("2027-01-08T00:00:01-08:00"))).toBe(false);
+describe("serviceOpen", () => {
+  it("takes pickup requests through the end of the request deadline day", () => {
+    expect(serviceOpen("pickup", new Date("2026-12-01T12:00:00-08:00"))).toBe(true);
+    expect(serviceOpen("pickup", new Date("2027-01-07T23:59:00-08:00"))).toBe(true);
+    expect(serviceOpen("pickup", new Date("2027-01-08T00:00:01-08:00"))).toBe(false);
+  });
+
+  it("takes drop-off prepayment through the last drop-off day", () => {
+    expect(serviceOpen("dropoff", new Date("2027-01-08T00:00:01-08:00"))).toBe(true);
+    expect(serviceOpen("dropoff", new Date("2027-01-17T23:59:00-08:00"))).toBe(true);
+    expect(serviceOpen("dropoff", new Date("2027-01-18T00:00:01-08:00"))).toBe(false);
+  });
+
+  it("closes the form after the later of the two", () => {
+    expect(new Date(formClosesAt()).toISOString()).toBe("2027-01-18T07:59:59.000Z");
   });
 });
