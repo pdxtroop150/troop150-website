@@ -1,6 +1,8 @@
 {
   "collectionDate": "2027-01-09",
   "requestDeadline": "2027-01-07",
-  "pricePerTreeDollars": 15,
-  "pricePerWreathDollars": 10
+  "pickupTreeDollars": 20,
+  "pickupWreathDollars": 15,
+  "dropOffTreeDollars": 15,
+  "dropOffWreathDollars": 15
 }

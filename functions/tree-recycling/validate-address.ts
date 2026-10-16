@@ -4,11 +4,11 @@
 import type { PagesFunction } from "@cloudflare/workers-types";
 import { checkAddress } from "../../src/lib/treeRecycling/addressValidation";
 import { json, type TreeRecyclingEnv } from "../../src/lib/treeRecycling/functionEnv";
-import { requestsOpen } from "../../src/lib/treeRecycling/settings";
+import { serviceOpen } from "../../src/lib/treeRecycling/settings";
 
 export const onRequestPost: PagesFunction<TreeRecyclingEnv> = async ({ request, env }) => {
   const body = (await request.json().catch(() => ({}))) as Record<string, string>;
-  if (!requestsOpen(new Date())) {
+  if (!serviceOpen("pickup", new Date())) {
     return json({ error: "Pickup requests are not being accepted right now." }, 403);
   }
 

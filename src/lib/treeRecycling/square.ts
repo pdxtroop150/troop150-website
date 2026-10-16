@@ -63,7 +63,10 @@ export interface PaymentLinkLineItem {
 
 export interface PaymentLinkRequest {
   lineItems: PaymentLinkLineItem[];
-  /** Up to 9 entries (Square allows 10; one marks the source), each value at most 255 characters. */
+  /**
+   * Up to 9 entries (Square allows 10, and one marks the source; this uses all
+   * 9), each value at most 255 characters.
+   */
   metadata: Record<string, string>;
   buyerEmail: string;
   buyerPhone: string; // E.164, e.g. +15035551234

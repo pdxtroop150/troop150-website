@@ -1,5 +1,5 @@
-// Season settings and rules shared by the pickup form (browser) and the
-// tree-recycling Pages Functions (server). Keep this file free of Astro-only
+// Season settings and rules shared by the tree recycling form (browser) and
+// the tree-recycling Pages Functions (server). Keep this file free of Astro-only
 // imports so Wrangler can bundle it.
 import seasonConfig from "../../config/treeRecycling.json";
 
@@ -9,9 +9,14 @@ export interface SeasonConfig {
   collectionDate: string;
   /** Last day to request a pickup, "YYYY-MM-DD"; requests close at midnight Pacific. */
   requestDeadline: string;
-  pricePerTreeDollars: number;
-  pricePerWreathDollars: number;
+  pickupTreeDollars: number;
+  pickupWreathDollars: number;
+  dropOffTreeDollars: number;
+  dropOffWreathDollars: number;
 }
+
+/** Curbside pickup, or prepaying for a drop-off at the lot. */
+export type Service = "pickup" | "dropoff";
 
 export interface TreeRecyclingSettings extends SeasonConfig {
   /** "Saturday, January 9, 2027" */
@@ -26,6 +31,13 @@ export interface TreeRecyclingSettings extends SeasonConfig {
   requestDeadlineLabel: string;
   /** Drop-off runs from the weekend before pickup through the weekend after. */
   dropOffDatesLabel: string;
+  /** "January 2 through January 17" */
+  dropOffShortDatesLabel: string;
+  /** When drop-off prepayment closes (end of the last drop-off day). */
+  dropOffEndAt: number;
+  dropOffLocation: string;
+  dropOffAddress: string;
+  dropOffHours: string;
   maxTrees: number;
   maxWreaths: number;
   maxAdditionalDonationDollars: number;
@@ -76,6 +88,9 @@ export function buildSettings(config: SeasonConfig): TreeRecyclingSettings {
   const dropOffStart = day(config.collectionDate, -7);
   const dropOffEnd = day(config.collectionDate, 8);
   const sameYear = dropOffStart.getUTCFullYear() === dropOffEnd.getUTCFullYear();
+  const dropOffShortDatesLabel =
+    `${format(dropOffStart, { month: "long", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) })} ` +
+    `through ${format(dropOffEnd, { month: "long", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) })}`;
 
   return {
     ...config,
@@ -98,6 +113,11 @@ export function buildSettings(config: SeasonConfig): TreeRecyclingSettings {
       "Saturdays and Sundays, " +
       `${format(dropOffStart, { month: "long", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) })} ` +
       `through ${format(dropOffEnd, { month: "long", day: "numeric", year: "numeric" })}`,
+    dropOffShortDatesLabel,
+    dropOffEndAt: endOfPacificDay(dropOffEnd.toISOString().slice(0, 10)),
+    dropOffLocation: "St. Andrews Presbyterian Church",
+    dropOffAddress: "3228 SW Sunset Blvd, Portland, OR 97239",
+    dropOffHours: "9am to 4pm",
     maxTrees: 10,
     maxWreaths: 10,
     maxAdditionalDonationDollars: 1000,
@@ -116,15 +136,36 @@ export function buildSettings(config: SeasonConfig): TreeRecyclingSettings {
 
 export const settings = buildSettings(seasonConfig as SeasonConfig);
 
-/** Pickup requests are accepted until the end of the request deadline day. */
-export function requestsOpen(now: Date, s: TreeRecyclingSettings = settings): boolean {
-  return now.getTime() <= s.requestDeadlineAt;
+/**
+ * Pickup requests are accepted through the request deadline day; drop-off
+ * prepayment through the last drop-off day.
+ */
+export function serviceOpen(
+  service: Service,
+  now: Date,
+  s: TreeRecyclingSettings = settings,
+): boolean {
+  return now.getTime() <= (service === "pickup" ? s.requestDeadlineAt : s.dropOffEndAt);
 }
 
-export interface PickupRequest {
+/** When the form stops taking any requests: the later of the two closings. */
+export function formClosesAt(s: TreeRecyclingSettings = settings): number {
+  return Math.max(s.requestDeadlineAt, s.dropOffEndAt);
+}
+
+export function prices(service: Service, s: TreeRecyclingSettings = settings) {
+  return service === "pickup"
+    ? { treeDollars: s.pickupTreeDollars, wreathDollars: s.pickupWreathDollars }
+    : { treeDollars: s.dropOffTreeDollars, wreathDollars: s.dropOffWreathDollars };
+}
+
+export interface RecyclingRequest {
   name: string;
   email: string;
   phone: string;
+  /** "" until the customer chooses. */
+  service: Service | "";
+  /** The address and instructions apply to pickups only. */
   street: string;
   unit: string;
   city: string;
@@ -147,19 +188,24 @@ export interface OrderLine {
 }
 
 /**
- * The order's line items: trees and wreaths at their set prices, plus any
- * additional donation. The form's summary and the Square order both use this.
+ * The order's line items: trees and wreaths at the chosen service's prices,
+ * plus any additional donation. The form's summary and the Square order both
+ * use this.
  */
 export function orderLines(
-  r: Pick<PickupRequest, "trees" | "wreaths" | "additionalDonationDollars">,
+  r: Pick<RecyclingRequest, "trees" | "wreaths" | "additionalDonationDollars"> & {
+    service: Service;
+  },
   s: TreeRecyclingSettings = settings,
 ): OrderLine[] {
+  const { treeDollars, wreathDollars } = prices(r.service, s);
+  const label = r.service === "pickup" ? "pickup" : "drop-off";
   const lines: OrderLine[] = [];
   if (r.trees > 0) {
-    lines.push({ kind: "tree", name: "Tree pickup", quantity: r.trees, unitCents: s.pricePerTreeDollars * 100 });
+    lines.push({ kind: "tree", name: `Tree ${label}`, quantity: r.trees, unitCents: treeDollars * 100 });
   }
   if (r.wreaths > 0) {
-    lines.push({ kind: "wreath", name: "Wreath pickup", quantity: r.wreaths, unitCents: s.pricePerWreathDollars * 100 });
+    lines.push({ kind: "wreath", name: `Wreath ${label}`, quantity: r.wreaths, unitCents: wreathDollars * 100 });
   }
   const donationCents = Math.round(r.additionalDonationDollars * 100);
   if (donationCents > 0) {
@@ -169,17 +215,22 @@ export function orderLines(
 }
 
 /**
- * The receipt note on a tree or wreath line, e.g. "Please place your trees by
- * your curb at 123 SW Main St, Portland, OR 97219 by 9am on Saturday,
- * January 9th for pickup."
+ * The receipt note on a tree or wreath line. For a pickup, e.g. "Please place
+ * your trees by your curb at 123 SW Main St, Portland, OR 97219 by 9am on
+ * Saturday, January 9th for pickup." For a drop-off, where and when to bring
+ * them.
  */
-export function pickupNote(
+export function itemNote(
   line: OrderLine,
+  service: Service,
   address: string,
   s: TreeRecyclingSettings = settings,
 ): string {
   const item = `${line.kind}${line.quantity === 1 ? "" : "s"}`;
-  return `Please place your ${item} by your curb at ${address} by ${s.curbDeadlineLabel} for pickup.`;
+  return service === "pickup"
+    ? `Please place your ${item} by your curb at ${address} by ${s.curbDeadlineLabel} for pickup.`
+    : `Please bring your ${item} to ${s.dropOffLocation} (${s.dropOffAddress}) ` +
+        `from ${s.dropOffHours}, ${s.dropOffDatesLabel}, and show this receipt.`;
 }
 
 /**
@@ -279,11 +330,11 @@ export function formatPhone(phone: string): string {
  * message; an empty map means the request is valid. The browser and the
  * server both run this, so a modified page cannot skip it.
  */
-export function validatePickupRequest(
-  r: PickupRequest,
+export function validateRequest(
+  r: RecyclingRequest,
   s: TreeRecyclingSettings = settings,
-): Partial<Record<keyof PickupRequest, string>> {
-  const errors: Partial<Record<keyof PickupRequest, string>> = {};
+): Partial<Record<keyof RecyclingRequest, string>> {
+  const errors: Partial<Record<keyof RecyclingRequest, string>> = {};
 
   if (!r.name.trim() || r.name.length > 100) {
     errors.name = "Please enter your name.";
@@ -294,20 +345,25 @@ export function validatePickupRequest(
   if (phoneDigits(r.phone).length !== 10) {
     errors.phone = "Please enter a 10-digit phone number.";
   }
-  if (!r.street.trim() || r.street.length > 200) {
-    errors.street = "Please enter your street address.";
+  if (r.service !== "pickup" && r.service !== "dropoff") {
+    errors.service = "Please choose pickup or drop-off.";
   }
-  if (r.unit.length > 50) {
-    errors.unit = "Please shorten the apartment or unit.";
-  }
-  if (!r.city.trim() || r.city.length > 100) {
-    errors.city = "Please enter your city.";
-  }
-  if (!/^\d{5}$/.test(r.zip.trim())) {
-    errors.zip = "Please enter a 5-digit ZIP code.";
-  }
-  if (r.instructions.length > MAX_INSTRUCTIONS_LENGTH) {
-    errors.instructions = `Please keep instructions under ${MAX_INSTRUCTIONS_LENGTH} characters.`;
+  if (r.service === "pickup") {
+    if (!r.street.trim() || r.street.length > 200) {
+      errors.street = "Please enter your street address.";
+    }
+    if (r.unit.length > 50) {
+      errors.unit = "Please shorten the apartment or unit.";
+    }
+    if (!r.city.trim() || r.city.length > 100) {
+      errors.city = "Please enter your city.";
+    }
+    if (!/^\d{5}$/.test(r.zip.trim())) {
+      errors.zip = "Please enter a 5-digit ZIP code.";
+    }
+    if (r.instructions.length > MAX_INSTRUCTIONS_LENGTH) {
+      errors.instructions = `Please keep instructions under ${MAX_INSTRUCTIONS_LENGTH} characters.`;
+    }
   }
   if (!s.referralSources.includes(r.referral)) {
     errors.referral = "Please tell us how you heard about us.";

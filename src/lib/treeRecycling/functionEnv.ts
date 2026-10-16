@@ -1,7 +1,7 @@
 // Environment and request helpers shared by the tree-recycling Pages Functions.
 import type { SheetsEnv } from "./sheets";
 import type { SquareEnv } from "./square";
-import type { PickupRequest } from "./settings";
+import type { RecyclingRequest } from "./settings";
 
 export interface TreeRecyclingEnv extends SquareEnv, SheetsEnv {
   SQUARE_WEBHOOK_SIGNATURE_KEY: string;
@@ -39,13 +39,14 @@ export function siteOrigin(request: Request): string {
   return url.origin;
 }
 
-/** Read a pickup request from a JSON body, coercing every field to its type. */
-export function pickupRequestFrom(body: Record<string, unknown>): PickupRequest {
+/** Read a request from a JSON body, coercing every field to its type. */
+export function requestFrom(body: Record<string, unknown>): RecyclingRequest {
   const text = (key: string) => (typeof body[key] === "string" ? (body[key] as string) : "");
   return {
     name: text("name"),
     email: text("email"),
     phone: text("phone"),
+    service: body.service === "pickup" || body.service === "dropoff" ? body.service : "",
     street: text("street"),
     unit: text("unit"),
     city: text("city"),

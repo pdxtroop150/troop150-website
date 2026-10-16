@@ -23,8 +23,10 @@ holds only what changes each year:
 {
   "collectionDate": "2027-01-09",
   "requestDeadline": "2027-01-07",
-  "pricePerTreeDollars": 15,
-  "pricePerWreathDollars": 10
+  "pickupTreeDollars": 20,
+  "pickupWreathDollars": 15,
+  "dropOffTreeDollars": 15,
+  "dropOffWreathDollars": 15
 }
 ```
 
@@ -32,28 +34,30 @@ holds only what changes each year:
 | --- | --- |
 | `collectionDate` | Pickup day. Its year also names the Tree Recycling sheet's tabs (see step 3). |
 | `requestDeadline` | Last day to request a pickup. Requests close at midnight Pacific at the end of that day. |
-| `pricePerTreeDollars`, `pricePerWreathDollars` | Prices for pickup and drop-off. |
+| `pickupTreeDollars`, `pickupWreathDollars` | Curbside pickup prices. |
+| `dropOffTreeDollars`, `dropOffWreathDollars` | Drop-off prices, whether prepaid online or paid at the lot. |
 
 Everything else is worked out from these
 (`buildSettings` in [`settings.ts`](../src/lib/treeRecycling/settings.ts)):
 the pickup date shown on the page, the "may be delayed overnight to Sunday"
 note, the "9am on Saturday, January 9th" curb time on receipts and the form,
 the deadline shown on the form, and the drop-off dates (the weekend before
-pickup through the weekend after).
+pickup through the weekend after, so January 2–17 for a January 9 pickup).
 
-There is no "open" date: **the form is live as soon as it is deployed** and
-closes automatically after `requestDeadline`. Until then, "Tree Recycling" is
-also a top-level menu item; afterward it moves back under Troop Info (the
-`promoteWhileTreeRequestsOpen` flag in `src/config/menu.json`). Merge to `main` only when you're
-ready for people to start requesting pickups.
+There is no "open" date: **the form is live as soon as it is deployed.**
+Pickup requests close automatically after `requestDeadline`, and drop-off
+prepayment after the last drop-off day. Until then, "Tree Recycling" is also a
+top-level menu item; afterward it moves back under Troop Info (the
+`promoteWhileTreeRequestsOpen` flag in `src/config/menu.json`). Merge to `main`
+only when you're ready for people to start using the form.
 
 Things that rarely change are in code rather than settings. Edit them there if
 needed:
 
 - Form limits, support email (trees@troop150.org), and "How did you hear about
   us?" choices: `buildSettings` in `settings.ts`.
-- Drop-off location, hours, and payment text: the Drop-off section of
-  [`treerecycling.mdx`](../src/content/pages/treerecycling.mdx).
+- Drop-off location, address, and hours: `buildSettings` in `settings.ts`
+  (used on the page, the form, receipts, and the confirmation page).
 - Service area: see step 2.
 
 ### 2. Review the service area (only if it changes)
@@ -68,7 +72,7 @@ a map to check. Then update the test locations in
 boundary has a test point on both sides, and run `npm test`.
 
 At the lot, set the Venmo business profile's QR code amount to one tree's
-price in the Venmo app; the website can't change it.
+drop-off price in the Venmo app; the website can't change it.
 
 ### 3. Check the Tree Recycling sheet
 
@@ -76,7 +80,9 @@ The [Tree Recycling](https://docs.google.com/spreadsheets/d/1TiLXFh8-Y09coQHAvwW
 Google Sheet gets two tabs per season, named from the
 year of `collectionDate`: **`<year>`** for real payments and **`<year> Test`**
 for Sandbox testing. They are created automatically, with a header row, on
-the first recorded payment. Nothing to do unless you want to pre-format them.
+the first recorded payment, and a tab that exists without a header gets one.
+Nothing to do unless you want to pre-format them. Volunteers can add their own
+columns or reorder them; the site writes each value under its header name.
 
 If you rename the spreadsheet, nothing breaks; the site uses its ID.
 
@@ -123,7 +129,8 @@ so on any other branch, test payments won't reach the Tree Recycling sheet.
    sign in (one-time PIN), and check:
    - An in-area address is accepted and standardized, an out-of-area one gets
      the "outside our pickup area" message, and a made-up one is not found.
-   - The form totals match the new prices.
+   - The form totals match the new prices, for both pickup and drop-off.
+   - A drop-off prepayment also adds a row, with Type "Drop-off" and no address.
    - Paying on Square's Sandbox testing panel (**Test Payment**) returns you
      to the confirmation page.
    - A row appears in the **`<year> Test`** tab within a minute.
@@ -133,7 +140,7 @@ so on any other branch, test payments won't reach the Tree Recycling sheet.
 1. Open a pull request into `main`, review, and merge. The site deploys and
    **the form goes live immediately.**
 2. **Smoke test right away, before announcing:** on troop150.org, make one
-   real $15 pickup request with a real card or Apple/Google Pay, using your
+   real pickup request with a real card or Apple/Google Pay, using your
    own email. Confirm the Square receipt email arrives with the curb note, a
    row appears in the **`<year>`** tab, and the payment shows in the Square
    Dashboard. Then have the Square admin refund it, and delete the row.
@@ -145,8 +152,12 @@ so on any other branch, test payments won't reach the Tree Recycling sheet.
   volunteers; the site never writes to it.
 - If a payment appears in Square without a row, see
   [Troubleshooting](#troubleshooting).
-- After `requestDeadline`, the form shows a "closed" message and the server
-  rejects requests, with no deploy needed. The drop-off section stays up.
+- After `requestDeadline`, the pickup option is greyed out and the server
+  rejects pickup requests; drop-off prepayment continues through the last
+  drop-off day, then the form shows a "season is over" message. No deploy is
+  needed for either.
+- At the lot, prepaid customers show their receipt or confirmation page. There
+  is no check-in list.
 
 ---
 
@@ -154,11 +165,13 @@ so on any other branch, test payments won't reach the Tree Recycling sheet.
 
 ### Customer flow
 
-1. The customer opens [troop150.org/treerecycling](https://troop150.org/treerecycling)
-   and fills in the form: contact info, address, pickup instructions, how
-   they heard about us, tree and wreath counts, and a required additional
-   donation (which may be $0).
-2. **Check address** (or the final button) standardizes the address with
+1. The customer opens [troop150.org/treerecycling](https://troop150.org/treerecycling),
+   enters contact info, and chooses **curbside pickup** or **drop-off**. The
+   rest of the form follows the choice: pickups ask for the address and pickup
+   instructions, and drop-offs show the lot's address, days, and hours. Both
+   then ask how they heard about us, tree and wreath counts (at that option's
+   prices), and a required additional donation (which may be $0).
+2. For pickups, **Check address** (or the final button) standardizes the address with
    Google and checks the service area, then fills the address fields with the
    postal formatting. If postal records actually differ from what was typed
    (a different ZIP code, city, or street spelling, not just capitalization or
@@ -176,8 +189,8 @@ so on any other branch, test payments won't reach the Tree Recycling sheet.
 5. Square notifies the site that the payment completed, and the site adds a
    row to the Tree Recycling sheet.
 
-Drop-offs don't use the website: customers pay at the lot with Venmo, cash,
-or check.
+Drop-off customers can also skip the website and pay at the lot with Venmo,
+cash, or check.
 
 ### Components
 
@@ -228,11 +241,12 @@ the outer limit. Current partial ZIPs:
 
 ### Pricing
 
-Trees and wreaths are separate Square line items at the configured prices,
-and a positive additional donation is a third. The server computes prices from
-the settings file, never from the browser. The tree and wreath lines carry a
-note that Square prints on the receipt, telling the customer where and when to
-put their items out.
+Trees and wreaths are separate Square line items ("Tree pickup", "Wreath
+drop-off", and so on) at the chosen option's configured prices, and a positive
+additional donation is a third. The server computes prices from the settings
+file, never from the browser. The tree and wreath lines carry a note that
+Square prints on the receipt: for pickups, where and when to put items out;
+for drop-offs, where and when to bring them and to show the receipt.
 
 ### Data flow: everything rides on the Square order
 
@@ -241,11 +255,12 @@ Square order:
 
 - **Line items** for trees, wreaths, and the donation, each tagged in its
   metadata with its kind (`tree`, `wreath`, `donation`).
-- **Order metadata**: name, email, phone, standardized address, ZIP,
-  collection date, customer instructions, how they heard about us, and a
-  `source` marker identifying tree recycling orders. Square allows at most 10
-  metadata entries of 255 characters each; we use 9, and blank values are
-  left out because Square rejects them.
+- **Order metadata**: pickup or drop-off (`service`), name, email, phone,
+  standardized address, ZIP, collection date, customer instructions, how they
+  heard about us, and a `source` marker identifying tree recycling orders.
+  Square allows at most 10 metadata entries of 255 characters each; a pickup
+  uses all 10, so adding a field means combining two. Blank values (the
+  address fields on drop-offs) are left out because Square rejects them.
 
 When Square sends `payment.updated`, the webhook function:
 
@@ -264,12 +279,16 @@ Square order, any missing row can be rebuilt from Square.
 
 The sheet's columns, in order:
 
-> Square Order ID · Paid At · Name · Email · Phone · Address · ZIP · Trees ·
+> Square Order ID · Paid At · Type · Name · Email · Phone · Address · ZIP · Trees ·
 > Wreaths · Additional Donation · Total Paid · Customer Instructions ·
 > Collection Date · Square Payment ID · Payment Status · Heard About Us · Notes
 
-Changing columns in `SHEET_COLUMNS` (in `sheets.ts`) only affects new tabs, so
-delete or fix an existing tab's header by hand.
+Rows are written by header name, not position. When `SHEET_COLUMNS` (in
+`sheets.ts`) changes, each tab is migrated in place on its next write: missing
+columns are inserted after the column they follow (existing rows get a default
+from `COLUMN_DEFAULTS`, such as "Pickup" for Type), renamed headers are
+updated (`RENAMED_COLUMNS`), and columns that are no longer used are left
+alone. `prepareTab` does the same without adding a row.
 
 The confirmation page doesn't need any of this: the form saves the address
 and items in the browser's local storage before leaving for Square, and the
@@ -392,7 +411,7 @@ To check from a terminal: an unsigned `POST` to the webhook path should return
 | Every address check fails | `GOOGLE_MAPS_API_KEY` missing or restricted to the wrong API, or Google billing lapsed. Check Cloudflare's function logs. |
 | A real address is "not found" | Google couldn't confirm it to the building. Customers are told to email trees@troop150.org; handle it by hand. |
 | Payment works but no row appears | Check the webhook subscription's delivery log in Square's Developer Console, the signature key in Cloudflare, `GOOGLE_SERVICE_ACCOUNT`, and that the sheet is shared with the service account. On previews, check the Access bypass with the `curl` test above. |
-| Rows land in the wrong columns | The tab was created with an older header. Fix the header row, or delete the tab and let it be recreated. |
+| A column's values look misplaced | A header cell was edited. The site matches columns by exact header text, so restore the header's name (or rename it in `RENAMED_COLUMNS`). |
 | No receipt email in testing | Square's Sandbox never sends email. Test receipts with the production smoke test. |
 | Preview not built after a push | The branch must be in pdxtroop150, not a fork. |
 | Preview payments don't add rows | The work must be on the `tree-recycling` branch, since that's the only preview address Square's Sandbox webhook calls. |

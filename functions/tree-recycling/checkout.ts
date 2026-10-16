@@ -6,7 +6,7 @@ import type { PagesFunction } from "@cloudflare/workers-types";
 import { checkAddress } from "../../src/lib/treeRecycling/addressValidation";
 import {
   json,
-  pickupRequestFrom,
+  requestFrom,
   siteOrigin,
   type TreeRecyclingEnv,
 } from "../../src/lib/treeRecycling/functionEnv";
@@ -14,54 +14,68 @@ import {
   formatPhone,
   orderLines,
   phoneDigits,
-  pickupNote,
-  requestsOpen,
+  itemNote,
+  serviceOpen,
   settings,
-  validatePickupRequest,
+  validateRequest,
+  type Service,
 } from "../../src/lib/treeRecycling/settings";
 import { createPaymentLink } from "../../src/lib/treeRecycling/square";
 
 export const onRequestPost: PagesFunction<TreeRecyclingEnv> = async ({ request, env }) => {
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-  if (!requestsOpen(new Date())) {
-    return json({ error: "Pickup requests are not being accepted right now." }, 403);
-  }
-
-  const pickup = pickupRequestFrom(body);
-  const errors = validatePickupRequest(pickup);
+  const order = requestFrom(body);
+  const errors = validateRequest(order);
   if (Object.keys(errors).length > 0) {
     return json({ error: "Please correct the highlighted fields.", fields: errors }, 400);
   }
+  const service = order.service as Service;
+  if (!serviceOpen(service, new Date())) {
+    return json(
+      {
+        error:
+          service === "pickup"
+            ? "Pickup requests are closed for this season."
+            : "Drop-off prepayment is closed for this season.",
+      },
+      403,
+    );
+  }
 
   try {
-    const check = await checkAddress(pickup, env.GOOGLE_MAPS_API_KEY);
-    if (check.status !== "in-area") {
-      return json({ error: "This address is not in our pickup area." }, 400);
+    let address = { formatted: "", zip: "" };
+    if (service === "pickup") {
+      const check = await checkAddress(order, env.GOOGLE_MAPS_API_KEY);
+      if (check.status !== "in-area") {
+        return json({ error: "This address is not in our pickup area." }, 400);
+      }
+      address = check.address;
     }
-    const { address } = check;
-    // Square's receipt shows item notes, so the pickup lines tell the customer
-    // where and when to put their items out.
 
     const { url } = await createPaymentLink(env, {
-      lineItems: orderLines(pickup).map((line) => ({
+      // Square's receipt shows item notes, so the tree and wreath lines tell
+      // the customer where and when to put out or bring their items.
+      lineItems: orderLines({ ...order, service }).map((line) => ({
         kind: line.kind,
         name: line.name,
-        note: line.kind === "donation" ? undefined : pickupNote(line, address.formatted),
+        note: line.kind === "donation" ? undefined : itemNote(line, service, address.formatted),
         quantity: line.quantity,
         unitCents: line.unitCents,
       })),
+      // Blank values (the address and instructions on drop-offs) are left out.
       metadata: {
-        collectionDate: settings.collectionDate,
-        name: pickup.name.trim(),
-        email: pickup.email.trim(),
-        phone: formatPhone(pickup.phone),
+        service,
+        collectionDate: service === "pickup" ? settings.collectionDate : "",
+        name: order.name.trim(),
+        email: order.email.trim(),
+        phone: formatPhone(order.phone),
         address: address.formatted.slice(0, 255),
         zip: address.zip,
-        instructions: pickup.instructions.trim().slice(0, 255),
-        referral: pickup.referral,
+        instructions: service === "pickup" ? order.instructions.trim().slice(0, 255) : "",
+        referral: order.referral,
       },
-      buyerEmail: pickup.email.trim(),
-      buyerPhone: `+1${phoneDigits(pickup.phone)}`,
+      buyerEmail: order.email.trim(),
+      buyerPhone: `+1${phoneDigits(order.phone)}`,
       redirectUrl: `${siteOrigin(request)}/treerecycling/confirmation`,
       supportEmail: settings.supportEmail,
     });
