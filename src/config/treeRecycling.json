@@ -2,7 +2,7 @@
   "collectionDate": "2027-01-09",
   "requestDeadline": "2027-01-07",
   "pickupTreeDollars": 20,
-  "pickupWreathDollars": 15,
+  "pickupWreathDollars": 10,
   "dropOffTreeDollars": 15,
-  "dropOffWreathDollars": 15
+  "dropOffWreathDollars": 10
 }

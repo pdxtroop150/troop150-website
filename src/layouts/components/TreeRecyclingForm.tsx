@@ -467,7 +467,7 @@ export default function TreeRecyclingForm() {
                   </span>
                   <span className="block text-sm">
                     {option === "pickup"
-                      ? settings.collectionDateLabel
+                      ? `Weekend of ${settings.collectionWeekendLabel}`
                       : `${settings.dropOffShortDatesLabel} (weekends)`}
                   </span>
                   <span className="block text-sm">
@@ -581,7 +581,7 @@ export default function TreeRecyclingForm() {
           <p className="mt-1 text-sm">
             {settings.dropOffAddress}, from {settings.dropOffHours}, {settings.dropOffDatesLabel}.
             Please remove all lights, ornaments, tinsel, and stands, and show your receipt at the
-            lot.
+            lot. No flocked trees.
           </p>
         </div>
       )}
@@ -679,9 +679,16 @@ export default function TreeRecyclingForm() {
 
       {service === "pickup" && (
         <div className="mb-6 rounded-md bg-theme-light p-4">
-          <p className="font-semibold text-dark">Collection date: {settings.collectionDateLabel}</p>
+          <p className="font-semibold text-dark">
+            Collection date: Weekend of {settings.collectionWeekendLabel}
+          </p>
           <p className="mt-1 text-sm">{settings.collectionDateNote}</p>
           <p className="mt-2 text-sm">{settings.curbInstructions}</p>
+          <p className="mt-2 text-sm">
+            Please make sure your tree is placed somewhere easily visible/accessible from the
+            public street. Unfortunately we cannot accept individual pickups from apartment/condo
+            complexes or private roads.
+          </p>
         </div>
       )}
 

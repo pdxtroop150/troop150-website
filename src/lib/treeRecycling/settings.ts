@@ -19,8 +19,8 @@ export interface SeasonConfig {
 export type Service = "pickup" | "dropoff";
 
 export interface TreeRecyclingSettings extends SeasonConfig {
-  /** "Saturday, January 9, 2027" */
-  collectionDateLabel: string;
+  /** Pickup day and the day after: "January 9 and 10, 2027" */
+  collectionWeekendLabel: string;
   collectionDateNote: string;
   /** Used in the receipt note: "9am on Saturday, January 9th". */
   curbDeadlineLabel: string;
@@ -62,6 +62,15 @@ function ordinal(n: number): string {
   return `${n}${suffix}`;
 }
 
+/** "January 9 and 10, 2027", or "January 31 and February 1, 2027" across months. */
+function weekendLabel(first: Date, second: Date): string {
+  const secondDay =
+    first.getUTCMonth() === second.getUTCMonth()
+      ? format(second, { day: "numeric" })
+      : format(second, { month: "long", day: "numeric" });
+  return `${format(first, { month: "long", day: "numeric" })} and ${secondDay}, ${second.getUTCFullYear()}`;
+}
+
 /** The last second of a "YYYY-MM-DD" day in Portland, whether PST or PDT. */
 function endOfPacificDay(date: string): number {
   for (const offset of ["-08:00", "-07:00"]) {
@@ -94,15 +103,12 @@ export function buildSettings(config: SeasonConfig): TreeRecyclingSettings {
 
   return {
     ...config,
-    collectionDateLabel: format(pickup, { ...weekdayMonth, day: "numeric", year: "numeric" }),
-    collectionDateNote:
-      "Depending on weather and other circumstances, pickup may be delayed overnight to " +
-      `${format(day(config.collectionDate, 1), { ...weekdayMonth, day: "numeric" })}, ` +
-      "but we guarantee pickup that weekend.",
+    collectionWeekendLabel: weekendLabel(pickup, day(config.collectionDate, 1)),
+    collectionDateNote: "Depending on weather and other circumstances, pickups may be delayed.",
     curbDeadlineLabel,
     curbInstructions:
       `Please place your trees and wreaths by your curb by ${curbDeadlineLabel}, ` +
-      "with all lights, ornaments, tinsel, and stands removed.",
+      "with all lights, ornaments, tinsel, and stands removed. No flocked trees.",
     requestDeadlineAt: endOfPacificDay(config.requestDeadline),
     requestDeadlineLabel: format(day(config.requestDeadline), {
       ...weekdayMonth,
@@ -220,6 +226,9 @@ export function orderLines(
  * Saturday, January 9th for pickup." For a drop-off, where and when to bring
  * them.
  */
+/** How to get trees and wreaths ready, for the receipt notes. */
+const PREPARATION = "Please remove all lights, ornaments, tinsel, and stands. No flocked trees.";
+
 export function itemNote(
   line: OrderLine,
   service: Service,
@@ -227,10 +236,12 @@ export function itemNote(
   s: TreeRecyclingSettings = settings,
 ): string {
   const item = `${line.kind}${line.quantity === 1 ? "" : "s"}`;
-  return service === "pickup"
-    ? `Please place your ${item} by your curb at ${address} by ${s.curbDeadlineLabel} for pickup.`
-    : `Please bring your ${item} to ${s.dropOffLocation} (${s.dropOffAddress}) ` +
+  const where =
+    service === "pickup"
+      ? `Please place your ${item} by your curb at ${address} by ${s.curbDeadlineLabel} for pickup.`
+      : `Please bring your ${item} to ${s.dropOffLocation} (${s.dropOffAddress}) ` +
         `from ${s.dropOffHours}, ${s.dropOffDatesLabel}, and show this receipt.`;
+  return `${where} ${PREPARATION}`;
 }
 
 /**

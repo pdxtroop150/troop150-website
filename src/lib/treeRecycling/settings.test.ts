@@ -35,18 +35,18 @@ describe("orderLines", () => {
     const lines = orderLines({ service: "pickup", trees: 2, wreaths: 3, additionalDonationDollars: 0 });
     expect(lines).toEqual([
       { kind: "tree", name: "Tree pickup", quantity: 2, unitCents: 2000 },
-      { kind: "wreath", name: "Wreath pickup", quantity: 3, unitCents: 1500 },
+      { kind: "wreath", name: "Wreath pickup", quantity: 3, unitCents: 1000 },
     ]);
-    expect(orderTotalCents(lines)).toBe(8500);
+    expect(orderTotalCents(lines)).toBe(7000);
   });
 
   it("charges drop-off prices for a drop-off", () => {
     const lines = orderLines({ service: "dropoff", trees: 2, wreaths: 1, additionalDonationDollars: 0 });
     expect(lines).toEqual([
       { kind: "tree", name: "Tree drop-off", quantity: 2, unitCents: 1500 },
-      { kind: "wreath", name: "Wreath drop-off", quantity: 1, unitCents: 1500 },
+      { kind: "wreath", name: "Wreath drop-off", quantity: 1, unitCents: 1000 },
     ]);
-    expect(orderTotalCents(lines)).toBe(4500);
+    expect(orderTotalCents(lines)).toBe(4000);
   });
 
   it("uses the configured prices", () => {
@@ -72,17 +72,17 @@ describe("itemNote", () => {
   it("tells pickup customers where and when to put items out", () => {
     const [trees, wreath] = orderLines({ service: "pickup", trees: 2, wreaths: 1, additionalDonationDollars: 0 });
     expect(itemNote(trees, "pickup", address)).toBe(
-      "Please place your trees by your curb at 8935 SW 52nd Ave, Portland, OR 97219 by 9am on Saturday, January 9th for pickup.",
+      "Please place your trees by your curb at 8935 SW 52nd Ave, Portland, OR 97219 by 9am on Saturday, January 9th for pickup. Please remove all lights, ornaments, tinsel, and stands. No flocked trees.",
     );
     expect(itemNote(wreath, "pickup", address)).toBe(
-      "Please place your wreath by your curb at 8935 SW 52nd Ave, Portland, OR 97219 by 9am on Saturday, January 9th for pickup.",
+      "Please place your wreath by your curb at 8935 SW 52nd Ave, Portland, OR 97219 by 9am on Saturday, January 9th for pickup. Please remove all lights, ornaments, tinsel, and stands. No flocked trees.",
     );
   });
 
   it("tells drop-off customers where and when to bring items", () => {
     const [tree] = orderLines({ service: "dropoff", trees: 1, wreaths: 0, additionalDonationDollars: 0 });
     expect(itemNote(tree, "dropoff", "")).toBe(
-      "Please bring your tree to St. Andrews Presbyterian Church (3228 SW Sunset Blvd, Portland, OR 97239) from 9am to 4pm, Saturdays and Sundays, January 2 through January 17, 2027, and show this receipt.",
+      "Please bring your tree to St. Andrews Presbyterian Church (3228 SW Sunset Blvd, Portland, OR 97239) from 9am to 4pm, Saturdays and Sundays, January 2 through January 17, 2027, and show this receipt. Please remove all lights, ornaments, tinsel, and stands. No flocked trees.",
     );
   });
 });
@@ -232,10 +232,7 @@ describe("buildSettings", () => {
   });
 
   it("derives every date label from the two dates", () => {
-    expect(season.collectionDateLabel).toBe("Saturday, January 9, 2027");
-    expect(season.collectionDateNote).toBe(
-      "Depending on weather and other circumstances, pickup may be delayed overnight to Sunday, January 10, but we guarantee pickup that weekend.",
-    );
+    expect(season.collectionWeekendLabel).toBe("January 9 and 10, 2027");
     expect(season.curbDeadlineLabel).toBe("9am on Saturday, January 9th");
     expect(season.curbInstructions).toContain("by your curb by 9am on Saturday, January 9th,");
     expect(season.requestDeadlineLabel).toBe("Thursday, January 7, 2027");
@@ -254,6 +251,9 @@ describe("buildSettings", () => {
   it("handles ordinals and drop-off weekends that start in December", () => {
     const early = buildSettings({ ...season, collectionDate: "2028-01-02" });
     expect(early.curbDeadlineLabel).toBe("9am on Sunday, January 2nd");
+    expect(buildSettings({ ...season, collectionDate: "2028-01-31" }).collectionWeekendLabel).toBe(
+      "January 31 and February 1, 2028",
+    );
     expect(early.dropOffDatesLabel).toBe(
       "Saturdays and Sundays, December 26, 2027 through January 10, 2028",
     );
