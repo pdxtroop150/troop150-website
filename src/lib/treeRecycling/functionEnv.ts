@@ -56,7 +56,7 @@ export function requestFrom(body: Record<string, unknown>): RecyclingRequest {
     trees: Number(body.trees),
     wreaths: Number(body.wreaths),
     // JSON turns NaN into null; Number(null) would be 0, so keep it missing.
-    additionalDonationDollars:
-      typeof body.additionalDonationDollars === "number" ? body.additionalDonationDollars : NaN,
+    additionalSupportDollars:
+      typeof body.additionalSupportDollars === "number" ? body.additionalSupportDollars : NaN,
   };
 }

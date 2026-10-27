@@ -58,7 +58,7 @@ export const onRequestPost: PagesFunction<TreeRecyclingEnv> = async ({ request, 
       lineItems: orderLines({ ...order, service }).map((line) => ({
         kind: line.kind,
         name: line.name,
-        note: line.kind === "donation" ? undefined : itemNote(line, service, address.formatted),
+        note: line.kind === "support" ? undefined : itemNote(line, service, address.formatted),
         quantity: line.quantity,
         unitCents: line.unitCents,
       })),

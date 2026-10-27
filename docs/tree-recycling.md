@@ -173,7 +173,7 @@ so on any other branch, test payments won't reach the Tree Recycling sheet.
    rest of the form follows the choice: pickups ask for the address and pickup
    instructions, and drop-offs show the lot's address, days, and hours. Both
    then ask how they heard about us, tree and wreath counts (at that option's
-   prices), and a required additional donation (which may be $0).
+   prices), and a required additional support amount (which may be $0).
 2. For pickups, **Check address** (or the final button) standardizes the address with
    Google and checks the service area, then fills the address fields with the
    postal formatting. If postal records actually differ from what was typed
@@ -246,7 +246,7 @@ the outer limit. Current partial ZIPs:
 
 Trees and wreaths are separate Square line items ("Tree pickup", "Wreath
 drop-off", and so on) at the chosen option's configured prices, and a positive
-additional donation is a third. The server computes prices from the settings
+additional support amount is a third. The server computes prices from the settings
 file, never from the browser. The tree and wreath lines carry a note that
 Square prints on the receipt: for pickups, where and when to put items out;
 for drop-offs, where and when to bring them and to show the receipt.
@@ -256,8 +256,8 @@ for drop-offs, where and when to bring them and to show the receipt.
 The site has no database. At checkout, the whole request is stored on the
 Square order:
 
-- **Line items** for trees, wreaths, and the donation, each tagged in its
-  metadata with its kind (`tree`, `wreath`, `donation`).
+- **Line items** for trees, wreaths, and any additional support, each tagged in its
+  metadata with its kind (`tree`, `wreath`, `support`).
 - **Order metadata**: pickup or drop-off (`service`), name, email, phone,
   standardized address, ZIP, collection date, customer instructions, how they
   heard about us, and a `source` marker identifying tree recycling orders.
@@ -283,7 +283,7 @@ Square order, any missing row can be rebuilt from Square.
 The pickup tabs' columns, in order:
 
 > Square Order ID · Paid At · Name · Email · Phone · Address · ZIP · Trees ·
-> Wreaths · Additional Donation · Total Paid · Customer Instructions ·
+> Wreaths · Additional Support · Total Paid · Customer Instructions ·
 > Collection Date · Square Payment ID · Payment Status · Heard About Us · Notes
 
 The drop-off tabs have the same columns without Address, ZIP, Customer

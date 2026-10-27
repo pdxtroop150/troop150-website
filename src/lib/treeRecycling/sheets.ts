@@ -25,7 +25,7 @@ export const PICKUP_COLUMNS = [
   "ZIP",
   "Trees",
   "Wreaths",
-  "Additional Donation",
+  "Additional Support",
   "Total Paid",
   "Customer Instructions",
   "Collection Date",

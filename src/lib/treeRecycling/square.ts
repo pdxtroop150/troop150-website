@@ -99,7 +99,7 @@ export async function createPaymentLink(
       merchant_support_email: r.supportEmail,
       ask_for_shipping_address: false,
       allow_tipping: false,
-      // No coupon or loyalty sections; these are donations.
+      // No coupon or loyalty sections.
       enable_coupon: false,
       enable_loyalty: false,
       accepted_payment_methods: { apple_pay: true, google_pay: true },

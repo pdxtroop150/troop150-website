@@ -56,7 +56,7 @@ const emptyRequest: RecyclingRequest = {
   referral: "",
   trees: 1,
   wreaths: 0,
-  additionalDonationDollars: NaN,
+  additionalSupportDollars: NaN,
 };
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
@@ -75,8 +75,8 @@ function OrderSummary({ request, service }: { request: RecyclingRequest; service
   const lines = orderLines({
     ...request,
     service,
-    additionalDonationDollars: Number.isFinite(request.additionalDonationDollars)
-      ? request.additionalDonationDollars
+    additionalSupportDollars: Number.isFinite(request.additionalSupportDollars)
+      ? request.additionalSupportDollars
       : 0,
   });
   return (
@@ -86,7 +86,7 @@ function OrderSummary({ request, service }: { request: RecyclingRequest; service
           <tr key={line.kind} className="border-b border-border">
             <td className="py-2">
               {line.name}
-              {line.kind !== "donation" &&
+              {line.kind !== "support" &&
                 ` (${line.quantity} × ${formatDollars(line.unitCents)})`}
             </td>
             <td className="py-2 text-right">{formatDollars(line.quantity * line.unitCents)}</td>
@@ -137,7 +137,7 @@ export default function TreeRecyclingForm() {
   // the site is static.
   const [open, setOpen] = useState<Record<Service, boolean> | null>(null);
   const [request, setRequest] = useState<RecyclingRequest>(emptyRequest);
-  const [donationText, setDonationText] = useState("");
+  const [supportText, setSupportText] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [message, setMessage] = useState<React.ReactNode>(null);
   const [busy, setBusy] = useState(false);
@@ -293,9 +293,9 @@ export default function TreeRecyclingForm() {
     setErrors((e) => ({ ...e, trees: undefined, wreaths: undefined }));
   }
 
-  function changeDonation(text: string) {
-    setDonationText(text);
-    update("additionalDonationDollars", text.trim() === "" ? NaN : Number(text));
+  function changeSupport(text: string) {
+    setSupportText(text);
+    update("additionalSupportDollars", text.trim() === "" ? NaN : Number(text));
   }
 
   /** Check everything, then go straight to Square's payment page. */
@@ -650,26 +650,26 @@ export default function TreeRecyclingForm() {
           </select>
         </Field>
         <Field
-          label="Additional donation"
-          name="additionalDonationDollars"
-          error={errors.additionalDonationDollars}
+          label="Additional support"
+          name="additionalSupportDollars"
+          error={errors.additionalSupportDollars}
         >
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-dark">
               $
             </span>
             <input
-              id="additionalDonationDollars"
+              id="additionalSupportDollars"
               type="number"
               inputMode="decimal"
-              className={`${inputClass("additionalDonationDollars")} pl-7`}
+              className={`${inputClass("additionalSupportDollars")} pl-7`}
               min={0}
-              max={settings.maxAdditionalDonationDollars}
+              max={settings.maxAdditionalSupportDollars}
               step="any"
               required
-              value={donationText}
-              onChange={(e) => changeDonation(e.target.value)}
-              aria-describedby={describedBy("additionalDonationDollars")}
+              value={supportText}
+              onChange={(e) => changeSupport(e.target.value)}
+              aria-describedby={describedBy("additionalSupportDollars")}
             />
           </div>
         </Field>

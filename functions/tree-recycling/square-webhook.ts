@@ -69,8 +69,8 @@ export const onRequestPost: PagesFunction<TreeRecyclingEnv> = async ({ request, 
       lines
         .filter((line) => line.metadata?.[LINE_KIND_KEY] === kind)
         .reduce((total, line) => total + Number(line.quantity), 0);
-    const donationCents = lines
-      .filter((line) => line.metadata?.[LINE_KIND_KEY] === "donation")
+    const supportCents = lines
+      .filter((line) => line.metadata?.[LINE_KIND_KEY] === "support")
       .reduce((total, line) => total + line.total_money.amount, 0);
     // Orders from before drop-offs existed have no service; they were pickups.
     const service: Service = m.service === "dropoff" ? "dropoff" : "pickup";
@@ -87,7 +87,7 @@ export const onRequestPost: PagesFunction<TreeRecyclingEnv> = async ({ request, 
       ZIP: m.zip ?? "",
       Trees: count("tree"),
       Wreaths: count("wreath"),
-      "Additional Donation": (donationCents / 100).toFixed(2),
+      "Additional Support": (supportCents / 100).toFixed(2),
       "Total Paid": (payment.amount_money.amount / 100).toFixed(2),
       "Customer Instructions": m.instructions ?? "",
       "Collection Date": m.collectionDate ?? "",

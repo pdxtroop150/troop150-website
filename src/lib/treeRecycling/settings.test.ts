@@ -27,12 +27,12 @@ const valid: RecyclingRequest = {
   referral: "Door hanger",
   trees: 2,
   wreaths: 1,
-  additionalDonationDollars: 0,
+  additionalSupportDollars: 0,
 };
 
 describe("orderLines", () => {
   it("charges pickup prices for a pickup", () => {
-    const lines = orderLines({ service: "pickup", trees: 2, wreaths: 3, additionalDonationDollars: 0 });
+    const lines = orderLines({ service: "pickup", trees: 2, wreaths: 3, additionalSupportDollars: 0 });
     expect(lines).toEqual([
       { kind: "tree", name: "Tree pickup", quantity: 2, unitCents: 2000 },
       { kind: "wreath", name: "Wreath pickup", quantity: 3, unitCents: 1000 },
@@ -41,7 +41,7 @@ describe("orderLines", () => {
   });
 
   it("charges drop-off prices for a drop-off", () => {
-    const lines = orderLines({ service: "dropoff", trees: 2, wreaths: 1, additionalDonationDollars: 0 });
+    const lines = orderLines({ service: "dropoff", trees: 2, wreaths: 1, additionalSupportDollars: 0 });
     expect(lines).toEqual([
       { kind: "tree", name: "Tree drop-off", quantity: 2, unitCents: 1500 },
       { kind: "wreath", name: "Wreath drop-off", quantity: 1, unitCents: 1000 },
@@ -51,18 +51,18 @@ describe("orderLines", () => {
 
   it("uses the configured prices", () => {
     const custom = { ...settings, pickupTreeDollars: 25, dropOffWreathDollars: 12 };
-    expect(orderLines({ service: "pickup", trees: 1, wreaths: 0, additionalDonationDollars: 0 }, custom)[0].unitCents).toBe(2500);
-    expect(orderLines({ service: "dropoff", trees: 0, wreaths: 1, additionalDonationDollars: 0 }, custom)[0].unitCents).toBe(1200);
+    expect(orderLines({ service: "pickup", trees: 1, wreaths: 0, additionalSupportDollars: 0 }, custom)[0].unitCents).toBe(2500);
+    expect(orderLines({ service: "dropoff", trees: 0, wreaths: 1, additionalSupportDollars: 0 }, custom)[0].unitCents).toBe(1200);
   });
 
-  it("adds an additional donation line only when it is above zero", () => {
-    const lines = orderLines({ service: "pickup", trees: 1, wreaths: 0, additionalDonationDollars: 5.25 });
-    expect(lines.map((l) => l.kind)).toEqual(["tree", "donation"]);
+  it("adds an additional support line only when it is above zero", () => {
+    const lines = orderLines({ service: "pickup", trees: 1, wreaths: 0, additionalSupportDollars: 5.25 });
+    expect(lines.map((l) => l.kind)).toEqual(["tree", "support"]);
     expect(orderTotalCents(lines)).toBe(2525);
   });
 
   it("allows wreaths without trees", () => {
-    const lines = orderLines({ service: "dropoff", trees: 0, wreaths: 1, additionalDonationDollars: 0 });
+    const lines = orderLines({ service: "dropoff", trees: 0, wreaths: 1, additionalSupportDollars: 0 });
     expect(lines.map((l) => l.kind)).toEqual(["wreath"]);
   });
 });
@@ -70,7 +70,7 @@ describe("orderLines", () => {
 describe("itemNote", () => {
   const address = "8935 SW 52nd Ave, Portland, OR 97219";
   it("tells pickup customers where and when to put items out", () => {
-    const [trees, wreath] = orderLines({ service: "pickup", trees: 2, wreaths: 1, additionalDonationDollars: 0 });
+    const [trees, wreath] = orderLines({ service: "pickup", trees: 2, wreaths: 1, additionalSupportDollars: 0 });
     expect(itemNote(trees, "pickup", address)).toBe(
       "Please place your trees by your curb at 8935 SW 52nd Ave, Portland, OR 97219 by 9am on Saturday, January 9th for pickup. Please remove all lights, ornaments, tinsel, and stands. No flocked trees.",
     );
@@ -80,7 +80,7 @@ describe("itemNote", () => {
   });
 
   it("tells drop-off customers where and when to bring items", () => {
-    const [tree] = orderLines({ service: "dropoff", trees: 1, wreaths: 0, additionalDonationDollars: 0 });
+    const [tree] = orderLines({ service: "dropoff", trees: 1, wreaths: 0, additionalSupportDollars: 0 });
     expect(itemNote(tree, "dropoff", "")).toBe(
       "Please bring your tree to St. Andrews Presbyterian Church (3228 SW Sunset Blvd, Portland, OR 97239) from 9am to 4pm, Saturdays and Sundays, January 2 through January 17, 2027, and show this receipt. Please remove all lights, ornaments, tinsel, and stands. No flocked trees.",
     );
@@ -157,20 +157,20 @@ describe("validateRequest", () => {
     expect(validateRequest(valid)).toEqual({});
   });
 
-  it("accepts an additional donation with cents", () => {
-    expect(validateRequest({ ...valid, additionalDonationDollars: 5.1 })).toEqual({});
+  it("accepts an additional support amount with cents", () => {
+    expect(validateRequest({ ...valid, additionalSupportDollars: 5.1 })).toEqual({});
   });
 
-  it("requires an additional donation amount, even if it is 0", () => {
-    expect(validateRequest({ ...valid, additionalDonationDollars: NaN })).toHaveProperty(
-      "additionalDonationDollars",
+  it("requires an additional support amount, even if it is 0", () => {
+    expect(validateRequest({ ...valid, additionalSupportDollars: NaN })).toHaveProperty(
+      "additionalSupportDollars",
     );
   });
 
-  it("rejects negative, fractional-cent, and too-large additional donations", () => {
-    for (const additionalDonationDollars of [-1, 1.005, settings.maxAdditionalDonationDollars + 1]) {
-      expect(validateRequest({ ...valid, additionalDonationDollars })).toHaveProperty(
-        "additionalDonationDollars",
+  it("rejects negative, fractional-cent, and too-large additional support amounts", () => {
+    for (const additionalSupportDollars of [-1, 1.005, settings.maxAdditionalSupportDollars + 1]) {
+      expect(validateRequest({ ...valid, additionalSupportDollars })).toHaveProperty(
+        "additionalSupportDollars",
       );
     }
   });

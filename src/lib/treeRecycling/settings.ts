@@ -40,7 +40,7 @@ export interface TreeRecyclingSettings extends SeasonConfig {
   dropOffHours: string;
   maxTrees: number;
   maxWreaths: number;
-  maxAdditionalDonationDollars: number;
+  maxAdditionalSupportDollars: number;
   supportEmail: string;
   /** Choices for "How did you hear about us?" */
   referralSources: string[];
@@ -126,7 +126,7 @@ export function buildSettings(config: SeasonConfig): TreeRecyclingSettings {
     dropOffHours: "9am to 4pm",
     maxTrees: 10,
     maxWreaths: 10,
-    maxAdditionalDonationDollars: 1000,
+    maxAdditionalSupportDollars: 1000,
     supportEmail: "trees@troop150.org",
     referralSources: [
       "Internet search",
@@ -181,10 +181,10 @@ export interface RecyclingRequest {
   trees: number;
   wreaths: number;
   /** Required; NaN until the customer enters an amount (which may be 0). */
-  additionalDonationDollars: number;
+  additionalSupportDollars: number;
 }
 
-export type OrderLineKind = "tree" | "wreath" | "donation";
+export type OrderLineKind = "tree" | "wreath" | "support";
 
 export interface OrderLine {
   kind: OrderLineKind;
@@ -195,11 +195,11 @@ export interface OrderLine {
 
 /**
  * The order's line items: trees and wreaths at the chosen service's prices,
- * plus any additional donation. The form's summary and the Square order both
+ * plus any additional support amount. The form's summary and the Square order both
  * use this.
  */
 export function orderLines(
-  r: Pick<RecyclingRequest, "trees" | "wreaths" | "additionalDonationDollars"> & {
+  r: Pick<RecyclingRequest, "trees" | "wreaths" | "additionalSupportDollars"> & {
     service: Service;
   },
   s: TreeRecyclingSettings = settings,
@@ -213,9 +213,9 @@ export function orderLines(
   if (r.wreaths > 0) {
     lines.push({ kind: "wreath", name: `Wreath ${label}`, quantity: r.wreaths, unitCents: wreathDollars * 100 });
   }
-  const donationCents = Math.round(r.additionalDonationDollars * 100);
-  if (donationCents > 0) {
-    lines.push({ kind: "donation", name: "Additional donation", quantity: 1, unitCents: donationCents });
+  const supportCents = Math.round(r.additionalSupportDollars * 100);
+  if (supportCents > 0) {
+    lines.push({ kind: "support", name: "Additional support", quantity: 1, unitCents: supportCents });
   }
   return lines;
 }
@@ -393,12 +393,12 @@ export function validateRequest(
   if (!errors.trees && !errors.wreaths && r.trees + r.wreaths === 0) {
     errors.trees = "Please choose at least one tree or wreath.";
   }
-  const donation = r.additionalDonationDollars;
-  const wholeCents = Math.abs(Math.round(donation * 100) - donation * 100) < 1e-6;
-  if (!Number.isFinite(donation) || donation < 0 || !wholeCents) {
-    errors.additionalDonationDollars = "Please enter an additional donation amount, or 0.";
-  } else if (donation > s.maxAdditionalDonationDollars) {
-    errors.additionalDonationDollars = `For donations over $${s.maxAdditionalDonationDollars}, please contact us at ${s.supportEmail}.`;
+  const amount = r.additionalSupportDollars;
+  const wholeCents = Math.abs(Math.round(amount * 100) - amount * 100) < 1e-6;
+  if (!Number.isFinite(amount) || amount < 0 || !wholeCents) {
+    errors.additionalSupportDollars = "Please enter an additional support amount, or 0.";
+  } else if (amount > s.maxAdditionalSupportDollars) {
+    errors.additionalSupportDollars = `For amounts over $${s.maxAdditionalSupportDollars}, please contact us at ${s.supportEmail}.`;
   }
 
   return errors;
