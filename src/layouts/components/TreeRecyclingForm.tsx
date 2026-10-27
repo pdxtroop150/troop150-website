@@ -468,7 +468,7 @@ export default function TreeRecyclingForm() {
                   <span className="block text-sm">
                     {option === "pickup"
                       ? `Weekend of ${settings.collectionWeekendLabel}`
-                      : `${settings.dropOffShortDatesLabel} (weekends)`}
+                      : `${settings.dropOffShortDatesLabel} (weekends only)`}
                   </span>
                   <span className="block text-sm">
                     {available
