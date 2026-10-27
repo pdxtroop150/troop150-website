@@ -3,6 +3,7 @@ title: Tree Recycling
 description: Have Troop 150 pick up and recycle your Christmas tree, or drop it off at our tree lot.
 ---
 
+import ServiceAreaMap from '@/components/ServiceAreaMap.astro';
 import TreeRecyclingForm from '@/components/TreeRecyclingForm';
 import { settings } from '@/lib/treeRecycling/settings';
 
@@ -13,12 +14,14 @@ scouts! Request a curbside pickup, or bring them to our drop-off lot.
 
 We pick up trees on **{settings.collectionDateLabel}**.
 {settings.collectionDateNote} We collect trees in SW and NW Portland. Pickup is
-${settings.pickupTreeDollars} per tree and ${settings.pickupWreathDollars} per wreath; request it below by
-{settings.requestDeadlineLabel}.
+${settings.pickupTreeDollars} per tree and ${settings.pickupWreathDollars} per wreath. Pickup requests must be
+made by the end of the day on **{settings.requestDeadlineLabel}**.
+
+<ServiceAreaMap />
 
 ## Drop-off
 
-Bring your trees or wreaths to **{settings.dropOffLocation}**
+Bring your trees and wreaths to **{settings.dropOffLocation}**
 ({settings.dropOffAddress}) from {settings.dropOffHours},
 {settings.dropOffDatesLabel}. Please remove all lights, ornaments, tinsel, and
 stands.

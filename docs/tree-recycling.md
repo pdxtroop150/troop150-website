@@ -67,7 +67,9 @@ The ZIP codes and boundaries are defined in
 for every ZIP code served, plus a boundary for each one served only in part),
 which generates `src/config/treeRecyclingServiceArea.json`. To change them,
 edit the script and rerun it as its header explains; `--preview map.html` draws
-a map to check. Then update the test locations in
+a map to check, and `--image src/assets/tree-recycling-service-area.jpg`
+re-renders the map shown on the page (macOS with Google Chrome; Astro makes
+the small and full-size web versions from it at build time). Then update the test locations in
 [`serviceArea.test.ts`](../src/lib/treeRecycling/serviceArea.test.ts) so each
 boundary has a test point on both sides, and run `npm test`.
 

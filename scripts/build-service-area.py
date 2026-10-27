@@ -14,12 +14,17 @@ for ZIP code (ZCTA) outlines. Downloads are cached in a temporary directory.
 Usage:
     python3 -m venv /tmp/area-venv && /tmp/area-venv/bin/pip install shapely
     /tmp/area-venv/bin/python scripts/build-service-area.py [--preview map.html]
+        [--image src/assets/tree-recycling-service-area.jpg]
 
 --preview writes a Leaflet map for checking the result in a browser.
+--image renders a high-resolution JPEG map for the website with headless
+Chrome and sips, so it needs macOS with Google Chrome installed.
 """
 import argparse
 import hashlib
 import json
+import math
+import subprocess
 import tempfile
 import time
 import urllib.error
@@ -96,6 +101,7 @@ def served_side(zcta, lines, inside_point, barrier_area=None):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--preview", type=Path, help="write a Leaflet preview map here")
+    parser.add_argument("--image", type=Path, help="render the website's map image here (JPEG)")
     args = parser.parse_args()
 
     osm = fetch(
@@ -221,20 +227,75 @@ def main():
     OUTPUT.write_text(json.dumps(result, separators=(",", ":")) + "\n")
     print(f"Wrote {OUTPUT.relative_to(ROOT)}")
 
-    if args.preview:
+    if args.preview or args.image:
         # What the website actually accepts: whole ZIP codes for full
         # coverage, and each served side clipped to its ZIP code, merged into
         # one shape so nothing is shaded twice.
-        coverage = unary_union([
-            zcta.intersection(shape(served[z])) if z in served else zcta
+        pieces = {
+            z: zcta.intersection(shape(served[z])) if z in served else zcta
             for z, zcta in zctas.items()
-        ])
-        data = json.dumps({
+        }
+        coverage = unary_union(list(pieces.values()))
+        data = {
             "zips": {z: mapping(g.simplify(0.0002)) for z, g in zctas.items()},
             "coverage": mapping(coverage.simplify(0.0002)),
-        })
-        args.preview.write_text(PREVIEW.replace("DATA", data))
+        }
+    if args.preview:
+        args.preview.write_text(PREVIEW.replace("DATA", json.dumps(data)))
         print(f"Wrote {args.preview}")
+    if args.image:
+        render_image(args.image, data, pieces)
+
+
+# OpenStreetMap's tiles at this zoom, one image pixel per tile pixel.
+IMAGE_ZOOM = 14
+IMAGE_PADDING = 80
+CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+
+
+def render_image(path, data, pieces):
+    def pixels(lon, lat):
+        scale = 256 * 2 ** IMAGE_ZOOM
+        y = math.log(math.tan(math.pi / 4 + math.radians(lat) / 2))
+        return (lon + 180) / 360 * scale, (1 - y / math.pi) / 2 * scale
+
+    west, south, east, north = unary_union(list(pieces.values())).bounds
+    left, top = pixels(west, north)
+    right, bottom = pixels(east, south)
+    width = math.ceil(right - left) + 2 * IMAGE_PADDING
+    height = math.ceil(bottom - top) + 2 * IMAGE_PADDING
+    # Download the tiles first, so the screenshot never catches the map
+    # mid-load, and cache them so reruns don't fetch them again.
+    tiles = CACHE / "tiles"
+    # One extra tile on each side covers Leaflet's rounding when it centers the map.
+    for x in range(int(left - IMAGE_PADDING) // 256 - 1, int(right + IMAGE_PADDING) // 256 + 2):
+        for y in range(int(top - IMAGE_PADDING) // 256 - 1, int(bottom + IMAGE_PADDING) // 256 + 2):
+            tile = tiles / f"{IMAGE_ZOOM}/{x}/{y}.png"
+            if not tile.exists():
+                tile.parent.mkdir(parents=True, exist_ok=True)
+                request = urllib.request.Request(
+                    f"https://tile.openstreetmap.org/{IMAGE_ZOOM}/{x}/{y}.png",
+                    headers={"User-Agent": USER_AGENT})
+                tile.write_bytes(urllib.request.urlopen(request, timeout=60).read())
+    # The served part of each ZIP code, outlined and labeled inside the
+    # shading. Shared edges become the lines between ZIP codes.
+    data = dict(data, pieces={z: mapping(g.simplify(0.0002)) for z, g in pieces.items()}, labels={
+        z: list(g.representative_point().coords[0]) for z, g in pieces.items()
+    }, bounds=[[south, west], [north, east]], zoom=IMAGE_ZOOM, padding=IMAGE_PADDING,
+        tiles=tiles.as_uri() + "/{z}/{x}/{y}.png")
+    page = Path(tempfile.gettempdir()) / "troop150-service-area-image.html"
+    page.write_text(IMAGE_PAGE.replace("DATA", json.dumps(data)))
+    screenshot = page.with_suffix(".png")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run([
+        CHROME, "--headless=new", "--hide-scrollbars", "--force-device-scale-factor=1",
+        f"--window-size={width},{height}", "--virtual-time-budget=10000",
+        "--allow-file-access-from-files",
+        f"--screenshot={screenshot}", page.as_uri(),
+    ], check=True, capture_output=True)
+    subprocess.run(["sips", "-s", "format", "jpeg", "-s", "formatOptions", "85",
+                    str(screenshot), "--out", str(path)], check=True, capture_output=True)
+    print(f"Wrote {path} ({width}x{height})")
 
 
 PREVIEW = """<!doctype html><html><head><meta charset="utf-8"><title>Service area</title>
@@ -249,6 +310,38 @@ L.geoJSON(data.coverage, {style: {stroke: false, fillColor: "#2e7d32", fillOpaci
 const outlines = Object.entries(data.zips).map(([zip, geometry]) => L.geoJSON(geometry, {style: {
   color: "#000", weight: 2, fill: false}}).bindTooltip(zip, {permanent: true}).addTo(map));
 map.fitBounds(L.featureGroup(outlines).getBounds());
+</script></body></html>
+"""
+
+IMAGE_PAGE = """<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+html,body,#map{height:100%;margin:0;background:#fff}
+.zip{font:700 34px/1 Helvetica,Arial,sans-serif;color:#111;white-space:nowrap;
+  text-shadow:0 0 5px #fff,0 0 5px #fff,0 0 5px #fff,0 0 5px #fff}
+.legend{background:#fff;padding:14px 22px;font:600 32px Helvetica,Arial,sans-serif;
+  border:2px solid #999;border-radius:8px;display:flex;align-items:center;gap:14px}
+.legend i{width:44px;height:32px;background:rgba(46,125,50,.4);border:2px solid #2e7d32}
+.leaflet-control-attribution{font-size:20px}
+</style></head><body><div id="map"></div><script>
+const data = DATA;
+const map = L.map("map", {zoomControl: false, zoomSnap: 0, fadeAnimation: false,
+  zoomAnimation: false, attributionControl: false});
+L.control.attribution({prefix: false}).addTo(map);
+map.fitBounds(data.bounds, {padding: [data.padding, data.padding], maxZoom: data.zoom});
+L.tileLayer(data.tiles, {attribution: "&copy; OpenStreetMap contributors"}).addTo(map);
+L.geoJSON(data.coverage, {style: {stroke: false, fillColor: "#1b5e20", fillOpacity: 0.4}}).addTo(map);
+for (const geometry of Object.values(data.pieces))
+  L.geoJSON(geometry, {style: {color: "#000", weight: 2.5, fill: false}}).addTo(map);
+L.geoJSON(data.coverage, {style: {color: "#000", weight: 6, fill: false}}).addTo(map);
+for (const [zip, [lon, lat]] of Object.entries(data.labels))
+  L.marker([lat, lon], {icon: L.divIcon({className: "zip", html: zip, iconSize: null,
+    iconAnchor: [48, 17]})}).addTo(map);
+const legend = L.control({position: "topright"});
+legend.onAdd = () => Object.assign(document.createElement("div"),
+  {className: "legend", innerHTML: "<i></i>Curbside pickup area"});
+legend.addTo(map);
 </script></body></html>
 """
 
