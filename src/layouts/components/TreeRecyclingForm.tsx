@@ -394,7 +394,7 @@ export default function TreeRecyclingForm() {
         />
       </Field>
       <div className="grid gap-x-4 sm:grid-cols-2">
-        <Field label="Email" name="email" error={errors.email} hint="We will send an itemized donation receipt to this address.">
+        <Field label="Email" name="email" error={errors.email} hint="We will send a request confirmation to this address.">
           <input
             id="email"
             type="email"

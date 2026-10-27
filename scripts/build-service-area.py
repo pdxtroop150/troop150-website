@@ -244,7 +244,7 @@ def main():
         args.preview.write_text(PREVIEW.replace("DATA", json.dumps(data)))
         print(f"Wrote {args.preview}")
     if args.image:
-        render_image(args.image, data, pieces)
+        render_image(args.image, data, pieces, partial=set(served))
 
 
 # OpenStreetMap's tiles at this zoom, one image pixel per tile pixel.
@@ -253,7 +253,7 @@ IMAGE_PADDING = 80
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 
-def render_image(path, data, pieces):
+def render_image(path, data, pieces, partial):
     def pixels(lon, lat):
         scale = 256 * 2 ** IMAGE_ZOOM
         y = math.log(math.tan(math.pi / 4 + math.radians(lat) / 2))
@@ -278,9 +278,10 @@ def render_image(path, data, pieces):
                     headers={"User-Agent": USER_AGENT})
                 tile.write_bytes(urllib.request.urlopen(request, timeout=60).read())
     # The served part of each ZIP code, outlined and labeled inside the
-    # shading. Shared edges become the lines between ZIP codes.
+    # shading, with "(Partial)" where we serve only part of it. Shared edges
+    # become the lines between ZIP codes.
     data = dict(data, pieces={z: mapping(g.simplify(0.0002)) for z, g in pieces.items()}, labels={
-        z: list(g.representative_point().coords[0]) for z, g in pieces.items()
+        z: [*g.representative_point().coords[0], z in partial] for z, g in pieces.items()
     }, bounds=[[south, west], [north, east]], zoom=IMAGE_ZOOM, padding=IMAGE_PADDING,
         tiles=tiles.as_uri() + "/{z}/{x}/{y}.png")
     page = Path(tempfile.gettempdir()) / "troop150-service-area-image.html"
@@ -318,8 +319,10 @@ IMAGE_PAGE = """<!doctype html><html><head><meta charset="utf-8">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 html,body,#map{height:100%;margin:0;background:#fff}
-.zip{font:700 34px/1 Helvetica,Arial,sans-serif;color:#111;white-space:nowrap;
+.zip div{transform:translate(-50%,-50%);width:max-content;text-align:center;
+  font:700 34px/1.1 Helvetica,Arial,sans-serif;color:#111;
   text-shadow:0 0 5px #fff,0 0 5px #fff,0 0 5px #fff,0 0 5px #fff}
+.zip small{display:block;font-size:24px}
 .legend{background:#fff;padding:14px 22px;font:600 32px Helvetica,Arial,sans-serif;
   border:2px solid #999;border-radius:8px;display:flex;align-items:center;gap:14px}
 .legend i{width:44px;height:32px;background:rgba(46,125,50,.4);border:2px solid #2e7d32}
@@ -335,9 +338,9 @@ L.geoJSON(data.coverage, {style: {stroke: false, fillColor: "#1b5e20", fillOpaci
 for (const geometry of Object.values(data.pieces))
   L.geoJSON(geometry, {style: {color: "#000", weight: 2.5, fill: false}}).addTo(map);
 L.geoJSON(data.coverage, {style: {color: "#000", weight: 6, fill: false}}).addTo(map);
-for (const [zip, [lon, lat]] of Object.entries(data.labels))
-  L.marker([lat, lon], {icon: L.divIcon({className: "zip", html: zip, iconSize: null,
-    iconAnchor: [48, 17]})}).addTo(map);
+for (const [zip, [lon, lat, partial]] of Object.entries(data.labels))
+  L.marker([lat, lon], {icon: L.divIcon({className: "zip", iconSize: [0, 0],
+    html: `<div>${zip}${partial ? "<small>(Partial)</small>" : ""}</div>`})}).addTo(map);
 const legend = L.control({position: "topright"});
 legend.onAdd = () => Object.assign(document.createElement("div"),
   {className: "legend", innerHTML: "<i></i>Curbside pickup area"});
