@@ -79,10 +79,11 @@ drop-off price in the Venmo app; the website can't change it.
 ### 3. Check the Tree Recycling sheet
 
 The [Tree Recycling](https://docs.google.com/spreadsheets/d/1TiLXFh8-Y09coQHAvwWLhJput4MCw75az0uFoUwAVh0)
-Google Sheet gets two tabs per season, named from the
-year of `collectionDate`: **`<year>`** for real payments and **`<year> Test`**
-for Sandbox testing. They are created automatically, with a header row, on
-the first recorded payment, and a tab that exists without a header gets one.
+Google Sheet gets four tabs per season, named from the year of
+`collectionDate`: **`<year> Pickups`** and **`<year> Drop-offs`** for real
+payments, and **`<year> Pickups Test`** and **`<year> Drop-offs Test`** for
+Sandbox testing. Each is created automatically, with a header row, on its
+first recorded payment, and a tab that exists without a header gets one.
 Nothing to do unless you want to pre-format them. Volunteers can add their own
 columns or reorder them; the site writes each value under its header name.
 
@@ -132,10 +133,10 @@ so on any other branch, test payments won't reach the Tree Recycling sheet.
    - An in-area address is accepted and standardized, an out-of-area one gets
      the "outside our pickup area" message, and a made-up one is not found.
    - The form totals match the new prices, for both pickup and drop-off.
-   - A drop-off prepayment also adds a row, with Type "Drop-off" and no address.
    - Paying on Square's Sandbox testing panel (**Test Payment**) returns you
      to the confirmation page.
-   - A row appears in the **`<year> Test`** tab within a minute.
+   - A pickup's row appears in the **`<year> Pickups Test`** tab within a
+     minute, and a drop-off prepayment's row in **`<year> Drop-offs Test`**.
 
 ### 7. Launch
 
@@ -144,13 +145,13 @@ so on any other branch, test payments won't reach the Tree Recycling sheet.
 2. **Smoke test right away, before announcing:** on troop150.org, make one
    real pickup request with a real card or Apple/Google Pay, using your
    own email. Confirm the Square receipt email arrives with the curb note, a
-   row appears in the **`<year>`** tab, and the payment shows in the Square
+   row appears in the **`<year> Pickups`** tab, and the payment shows in the Square
    Dashboard. Then have the Square admin refund it, and delete the row.
 3. Publish the season post and send flyers or emails.
 
 ### 8. During and after the season
 
-- Watch the `<year>` tab for new rows. The **Notes** column is for
+- Watch the `<year> Pickups` and `<year> Drop-offs` tabs for new rows. The **Notes** column is for
   volunteers; the site never writes to it.
 - If a payment appears in Square without a row, see
   [Troubleshooting](#troubleshooting).
@@ -272,25 +273,26 @@ When Square sends `payment.updated`, the webhook function:
    continues only if it's `COMPLETED`.
 3. Fetches the order and ignores it unless it carries the tree recycling
    `source` marker.
-4. Appends the row to the `<year>` tab for production Square or `<year> Test`
-   for Sandbox (creating the tab if needed), unless that order ID is already
-   in the tab. Square retries notifications, so duplicates are expected.
+4. Appends the row to the `<year> Pickups` or `<year> Drop-offs` tab for
+   production Square, or the matching `… Test` tab for Sandbox (creating the
+   tab if needed), unless that order ID is already in the tab. Square retries notifications, so duplicates are expected.
 
 Errors return `500`, so Square retries. Because every detail lives on the
 Square order, any missing row can be rebuilt from Square.
 
-The sheet's columns, in order:
+The pickup tabs' columns, in order:
 
-> Square Order ID · Paid At · Type · Name · Email · Phone · Address · ZIP · Trees ·
+> Square Order ID · Paid At · Name · Email · Phone · Address · ZIP · Trees ·
 > Wreaths · Additional Donation · Total Paid · Customer Instructions ·
 > Collection Date · Square Payment ID · Payment Status · Heard About Us · Notes
 
-Rows are written by header name, not position. When `SHEET_COLUMNS` (in
+The drop-off tabs have the same columns without Address, ZIP, Customer
+Instructions, and Collection Date.
+
+Rows are written by header name, not position. When `PICKUP_COLUMNS` (in
 `sheets.ts`) changes, each tab is migrated in place on its next write: missing
-columns are inserted after the column they follow (existing rows get a default
-from `COLUMN_DEFAULTS`, such as "Pickup" for Type), renamed headers are
-updated (`RENAMED_COLUMNS`), and columns that are no longer used are left
-alone. `prepareTab` does the same without adding a row.
+columns are inserted after the column they follow, and columns that are no
+longer used are left alone. `prepareTab` does the same without adding a row.
 
 The confirmation page doesn't need any of this: the form saves the address
 and items in the browser's local storage before leaving for Square, and the
@@ -306,13 +308,13 @@ the page shows general curb instructions instead. (Square's Sandbox doesn't add
 | Address | `http://localhost:4321` | `https://tree-recycling.troop150-website.pages.dev` | `https://troop150.org` |
 | Git branch | any | `tree-recycling` in pdxtroop150 | `main` |
 | Square | Sandbox | Sandbox | Production |
-| Sheet tab | `<year> Test` | `<year> Test` | `<year>` |
+| Sheet tabs | `<year> Pickups Test`, `<year> Drop-offs Test` | `<year> Pickups Test`, `<year> Drop-offs Test` | `<year> Pickups`, `<year> Drop-offs` |
 | Secrets | `.dev.vars` (git-ignored) | Cloudflare **Preview** variables | Cloudflare **Production** variables |
 | Access | none | Cloudflare Access sign-in | public |
 
 `SQUARE_ENVIRONMENT=production` is the single switch for real money: it
-selects Square's production API and the `<year>` tab. Anywhere it's unset,
-the site uses Sandbox and the test tab.
+selects Square's production API and the real tabs. Anywhere it's unset,
+the site uses Sandbox and the test tabs.
 
 ### Configuration
 

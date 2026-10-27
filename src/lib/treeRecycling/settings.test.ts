@@ -88,10 +88,14 @@ describe("itemNote", () => {
 });
 
 describe("sheetTabName", () => {
-  it("uses the collection year, with a separate tab for testing", () => {
-    expect(sheetTabName(true)).toBe("2027");
-    expect(sheetTabName(false)).toBe("2027 Test");
-    expect(sheetTabName(false, { ...settings, collectionDate: "2028-01-08" })).toBe("2028 Test");
+  it("uses the collection year and service, with separate tabs for testing", () => {
+    expect(sheetTabName(true, "pickup")).toBe("2027 Pickups");
+    expect(sheetTabName(true, "dropoff")).toBe("2027 Drop-offs");
+    expect(sheetTabName(false, "pickup")).toBe("2027 Pickups Test");
+    expect(sheetTabName(false, "dropoff")).toBe("2027 Drop-offs Test");
+    expect(sheetTabName(false, "pickup", { ...settings, collectionDate: "2028-01-08" })).toBe(
+      "2028 Pickups Test",
+    );
   });
 });
 

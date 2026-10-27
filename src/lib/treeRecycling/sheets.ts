@@ -1,22 +1,23 @@
 // Appends paid requests to the Tree Recycling Google Sheet using a service
-// account. Production and testing share one spreadsheet, on separate tabs
-// (see sheetTabName), and a missing tab is created on first use.
+// account. Pickups and drop-offs, for production and for testing, share one
+// spreadsheet on separate tabs (see sheetTabName), and a missing tab is
+// created on first use.
 //
 // Rows are written by header name, not position, so volunteers can reorder
-// columns or add their own. When SHEET_COLUMNS changes, existing tabs are
+// columns or add their own. When a tab's columns change, existing tabs are
 // migrated in place: missing columns are inserted where they belong (keeping
-// formatting), renamed headers are updated, and old columns are left alone.
+// formatting), and old columns are left alone.
+import type { Service } from "./settings";
 
 export interface SheetsEnv {
   GOOGLE_SERVICE_ACCOUNT: string; // the service account's JSON key
   TREE_SHEET_ID: string;
 }
 
-export const SHEET_COLUMNS = [
+/** The pickup tab's columns. */
+export const PICKUP_COLUMNS = [
   "Square Order ID",
   "Paid At",
-  // "Pickup" or "Drop-off"
-  "Type",
   "Name",
   "Email",
   "Phone",
@@ -35,7 +36,27 @@ export const SHEET_COLUMNS = [
   "Notes",
 ] as const;
 
-export type SheetRow = Record<(typeof SHEET_COLUMNS)[number], string | number>;
+export type SheetColumn = (typeof PICKUP_COLUMNS)[number];
+
+/** Pickup details that drop-offs don't have. */
+const PICKUP_ONLY: readonly SheetColumn[] = [
+  "Address",
+  "ZIP",
+  "Customer Instructions",
+  "Collection Date",
+];
+
+/** The drop-off tab's columns: the pickup tab's, less the pickup details. */
+export const DROPOFF_COLUMNS = PICKUP_COLUMNS.filter((c) => !PICKUP_ONLY.includes(c));
+
+export function sheetColumns(service: Service): readonly SheetColumn[] {
+  return service === "pickup" ? PICKUP_COLUMNS : DROPOFF_COLUMNS;
+}
+
+/** A row's values; columns the tab doesn't have are left out. */
+export type SheetRow = Partial<Record<SheetColumn, string | number>> & {
+  "Square Order ID": string;
+};
 
 const SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 const SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets";
@@ -127,17 +148,6 @@ async function sheetsRequest<T>(
   return (await response.json()) as T;
 }
 
-/** Headers that were renamed, old name to new. */
-const RENAMED_COLUMNS: Record<string, (typeof SHEET_COLUMNS)[number]> = {
-  Instructions: "Customer Instructions",
-};
-
-/** What existing rows get when a column is added to a tab that has data. */
-const COLUMN_DEFAULTS: Partial<Record<(typeof SHEET_COLUMNS)[number], string>> = {
-  // Every order before drop-offs existed was a pickup.
-  Type: "Pickup",
-};
-
 /** A range on the tab, e.g. 'Tab Name'!A1, with the tab name quoted. */
 function range(tab: string, cells: string): string {
   return encodeURIComponent(`'${tab.replace(/'/g, "''")}'!${cells}`);
@@ -212,61 +222,42 @@ async function ensureTab(env: SheetsEnv, tab: string): Promise<number> {
 }
 
 /**
- * The tab's header row, after bringing it up to date with SHEET_COLUMNS.
- * Adds a header to a tab without one, renames old headers, and inserts any
- * missing columns next to the column they follow.
+ * The tab's header row, after bringing it up to date with the columns.
+ * Adds a header to a tab without one, and inserts any missing columns next
+ * to the column they follow.
  */
-async function ensureHeader(env: SheetsEnv, tab: string, sheetId: number): Promise<string[]> {
+async function ensureHeader(
+  env: SheetsEnv,
+  tab: string,
+  sheetId: number,
+  columns: readonly SheetColumn[],
+): Promise<string[]> {
   const header = (await readValues(env, tab, "1:1"))[0] ?? [];
 
   if (header.every((cell) => cell === "")) {
-    await writeValues(env, tab, "A1", [[...SHEET_COLUMNS]]);
-    return [...SHEET_COLUMNS];
+    await writeValues(env, tab, "A1", [[...columns]]);
+    return [...columns];
   }
-  const known = (cell: string) =>
-    (SHEET_COLUMNS as readonly string[]).includes(cell) || cell in RENAMED_COLUMNS;
-  if (!header.some(known)) {
+  if (!header.some((cell) => (columns as readonly string[]).includes(cell))) {
     // Data without a header row: put one above it.
     await insertDimension(env, sheetId, "ROWS", 0);
-    await writeValues(env, tab, "A1", [[...SHEET_COLUMNS]]);
-    return [...SHEET_COLUMNS];
+    await writeValues(env, tab, "A1", [[...columns]]);
+    return [...columns];
   }
 
-  for (const [i, cell] of header.entries()) {
-    const renamed = RENAMED_COLUMNS[cell];
-    if (renamed && !header.includes(renamed)) {
-      header[i] = renamed;
-      await writeValues(env, tab, `${columnLetter(i)}1`, [[renamed]]);
-    }
-  }
-
-  for (const [k, column] of SHEET_COLUMNS.entries()) {
+  for (const [k, column] of columns.entries()) {
     if (header.includes(column)) {
       continue;
     }
     // Insert right after the nearest earlier column that the tab has.
-    const before = SHEET_COLUMNS.slice(0, k)
+    const before = columns
+      .slice(0, k)
       .map((c) => header.indexOf(c))
       .filter((i) => i >= 0);
     const index = before.length > 0 ? Math.max(...before) + 1 : 0;
     await insertDimension(env, sheetId, "COLUMNS", index);
     header.splice(index, 0, column);
     await writeValues(env, tab, `${columnLetter(index)}1`, [[column]]);
-
-    const fill = COLUMN_DEFAULTS[column];
-    if (fill) {
-      const idColumn = columnLetter(header.indexOf("Square Order ID"));
-      const ids = (await readValues(env, tab, `${idColumn}2:${idColumn}`)).map(([id]) => id ?? "");
-      if (ids.length > 0) {
-        const letter = columnLetter(index);
-        await writeValues(
-          env,
-          tab,
-          `${letter}2:${letter}${ids.length + 1}`,
-          ids.map((id) => [id ? fill : ""]),
-        );
-      }
-    }
   }
   return header;
 }
@@ -275,8 +266,8 @@ async function ensureHeader(env: SheetsEnv, tab: string, sheetId: number): Promi
  * Creates the tab if needed and brings its header up to date, without adding
  * a row. Writing a row does this too; this is for preparing a tab ahead of time.
  */
-export async function prepareTab(env: SheetsEnv, tab: string): Promise<string[]> {
-  return ensureHeader(env, tab, await ensureTab(env, tab));
+export async function prepareTab(env: SheetsEnv, tab: string, service: Service): Promise<string[]> {
+  return ensureHeader(env, tab, await ensureTab(env, tab), sheetColumns(service));
 }
 
 /**
@@ -287,10 +278,11 @@ export async function prepareTab(env: SheetsEnv, tab: string): Promise<string[]>
 export async function appendRequestRow(
   env: SheetsEnv,
   tab: string,
+  service: Service,
   row: SheetRow,
 ): Promise<boolean> {
   const sheetId = await ensureTab(env, tab);
-  const header = await ensureHeader(env, tab, sheetId);
+  const header = await ensureHeader(env, tab, sheetId, sheetColumns(service));
 
   const idColumn = columnLetter(header.indexOf("Square Order ID"));
   const ids = await readValues(env, tab, `${idColumn}2:${idColumn}`);
@@ -300,9 +292,7 @@ export async function appendRequestRow(
   }
 
   // Line values up with this tab's columns; other columns stay blank.
-  const values = header.map((column) =>
-    column in row ? row[column as keyof SheetRow] : "",
-  );
+  const values = header.map((column) => row[column as SheetColumn] ?? "");
   await sheetsRequest(
     env,
     "POST",

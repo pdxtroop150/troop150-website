@@ -245,12 +245,17 @@ export function itemNote(
 }
 
 /**
- * The routing sheet tab for this season: the collection year ("2027") for
- * real payments, and "2027 Test" for Sandbox testing.
+ * The sheet tab for this season's pickups or drop-offs, named from the
+ * collection year: "2027 Pickups" or "2027 Drop-offs" for real payments, and
+ * "2027 Pickups Test" or "2027 Drop-offs Test" for Sandbox testing.
  */
-export function sheetTabName(production: boolean, s: TreeRecyclingSettings = settings): string {
-  const year = s.collectionDate.slice(0, 4);
-  return production ? year : `${year} Test`;
+export function sheetTabName(
+  production: boolean,
+  service: Service,
+  s: TreeRecyclingSettings = settings,
+): string {
+  const tab = `${s.collectionDate.slice(0, 4)} ${service === "pickup" ? "Pickups" : "Drop-offs"}`;
+  return production ? tab : `${tab} Test`;
 }
 
 export function orderTotalCents(lines: OrderLine[]): number {

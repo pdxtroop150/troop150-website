@@ -1,6 +1,12 @@
 import { generateKeyPairSync } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { appendRequestRow, columnLetter, SHEET_COLUMNS, type SheetRow } from "./sheets";
+import {
+  appendRequestRow,
+  columnLetter,
+  DROPOFF_COLUMNS,
+  PICKUP_COLUMNS,
+  type SheetRow,
+} from "./sheets";
 
 const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
 const env = {
@@ -12,8 +18,8 @@ const env = {
 };
 
 function row(orderId: string, overrides: Partial<SheetRow> = {}): SheetRow {
-  const r = Object.fromEntries(SHEET_COLUMNS.map((c) => [c, ""])) as SheetRow;
-  return { ...r, "Square Order ID": orderId, Type: "Pickup", Name: `Name ${orderId}`, ...overrides };
+  const r = Object.fromEntries(PICKUP_COLUMNS.map((c) => [c, ""]));
+  return { ...r, "Square Order ID": orderId, Name: `Name ${orderId}`, ...overrides };
 }
 
 /** Column index from letters: A -> 0, AA -> 26. */
@@ -104,89 +110,95 @@ describe("columnLetter", () => {
 
 describe("appendRequestRow", () => {
   it("creates a missing tab with a header row", async () => {
-    const tabs = fakeGoogle({ "2027": [] });
-    expect(await appendRequestRow(env, "2030 Test", row("o1"))).toBe(true);
-    const rows = tabs.get("2030 Test")!.rows;
-    expect(rows[0]).toEqual([...SHEET_COLUMNS]);
+    const tabs = fakeGoogle({ "2027 Test (Old)": [] });
+    expect(await appendRequestRow(env, "2030 Pickups Test", "pickup", row("o1"))).toBe(true);
+    const rows = tabs.get("2030 Pickups Test")!.rows;
+    expect(rows[0]).toEqual([...PICKUP_COLUMNS]);
     expect(rows[1][0]).toBe("o1");
-    expect(tabs.get("2027")!.rows).toEqual([]);
+    expect(tabs.get("2027 Test (Old)")!.rows).toEqual([]);
+  });
+
+  it("gives drop-off tabs no pickup details", async () => {
+    const tabs = fakeGoogle({});
+    await appendRequestRow(
+      env,
+      "2030 Drop-offs Test",
+      "dropoff",
+      row("o1", { Address: "", ZIP: "", Trees: 2 }),
+    );
+    const [header, added] = tabs.get("2030 Drop-offs Test")!.rows;
+    expect(header).toEqual([...DROPOFF_COLUMNS]);
+    for (const column of ["Address", "ZIP", "Customer Instructions", "Collection Date"]) {
+      expect(header).not.toContain(column);
+    }
+    expect(added[header.indexOf("Name")]).toBe("Name o1");
+    expect(added[header.indexOf("Trees")]).toBe("2");
   });
 
   it("adds a header to an existing empty tab", async () => {
-    const tabs = fakeGoogle({ "2031": [] });
-    await appendRequestRow(env, "2031", row("o1"));
-    expect(tabs.get("2031")!.rows.map((r) => r[0])).toEqual(["Square Order ID", "o1"]);
+    const tabs = fakeGoogle({ "2031 Pickups": [] });
+    await appendRequestRow(env, "2031 Pickups", "pickup", row("o1"));
+    expect(tabs.get("2031 Pickups")!.rows.map((r) => r[0])).toEqual(["Square Order ID", "o1"]);
   });
 
   it("puts a header above rows that don't have one", async () => {
-    const existing = SHEET_COLUMNS.map((c) => (c === "Square Order ID" ? "o0" : c === "Name" ? "Pat" : ""));
-    const tabs = fakeGoogle({ "2032": [existing] });
-    await appendRequestRow(env, "2032", row("o1"));
-    const rows = tabs.get("2032")!.rows;
+    const existing = PICKUP_COLUMNS.map((c) => (c === "Square Order ID" ? "o0" : c === "Name" ? "Pat" : ""));
+    const tabs = fakeGoogle({ "2032 Pickups": [existing] });
+    await appendRequestRow(env, "2032 Pickups", "pickup", row("o1"));
+    const rows = tabs.get("2032 Pickups")!.rows;
     expect(rows.map((r) => r[0])).toEqual(["Square Order ID", "o0", "o1"]);
-    expect(rows[1][SHEET_COLUMNS.indexOf("Name")]).toBe("Pat");
+    expect(rows[1][PICKUP_COLUMNS.indexOf("Name")]).toBe("Pat");
   });
 
-  it("migrates an older layout in place without losing data", async () => {
-    // The original layout: coordinates, "Instructions", and no Type,
-    // Heard About Us, or Notes columns. A volunteer added "Driver".
+  it("adds missing columns in place without losing data", async () => {
+    // A tab from before Heard About Us and Notes existed, where a volunteer
+    // added "Driver".
     const oldHeader = [
-      "Square Order ID", "Paid At", "Name", "Email", "Phone", "Address", "ZIP",
-      "Latitude", "Longitude", "Trees", "Wreaths", "Additional Donation", "Total Paid",
-      "Instructions", "Collection Date", "Square Payment ID", "Payment Status", "Driver",
+      ...PICKUP_COLUMNS.filter((c) => c !== "Heard About Us" && c !== "Notes"),
+      "Driver",
     ];
-    const oldRow = [
-      "o0", "2026-10-15", "Pat", "pat@example.com", "(503) 555-0100", "1 Main St", "97219",
-      "45.4", "-122.7", "2", "1", "5.00", "45.00", "By the gate", "2027-01-09", "p0",
-      "COMPLETED", "Sam",
-    ];
-    const tabs = fakeGoogle({ "2033": [[...oldHeader], [...oldRow]] });
+    const oldRow = oldHeader.map((c) => (c === "Square Order ID" ? "o0" : c === "Driver" ? "Sam" : `${c} 0`));
+    const tabs = fakeGoogle({ "2033 Pickups": [[...oldHeader], [...oldRow]] });
 
-    await appendRequestRow(env, "2033", row("o1", { Type: "Drop-off", Notes: "" }));
-    const [header, migrated, added] = tabs.get("2033")!.rows;
+    await appendRequestRow(env, "2033 Pickups", "pickup", row("o1", { "Heard About Us": "Email" }));
+    const [header, migrated, added] = tabs.get("2033 Pickups")!.rows;
     const cell = (r: string[], column: string) => r[header.indexOf(column)];
 
-    // Type goes right after Paid At; Heard About Us and Notes after Payment Status.
-    expect(header.slice(0, 4)).toEqual(["Square Order ID", "Paid At", "Type", "Name"]);
-    expect(header).toContain("Customer Instructions");
-    expect(header).not.toContain("Instructions");
+    // Heard About Us and Notes go after Payment Status, before Driver.
     expect(header.indexOf("Heard About Us")).toBe(header.indexOf("Payment Status") + 1);
     expect(header.indexOf("Notes")).toBe(header.indexOf("Heard About Us") + 1);
-    // Old and volunteer columns stay.
-    expect(header).toEqual(expect.arrayContaining(["Latitude", "Longitude", "Driver"]));
+    expect(header[header.length - 1]).toBe("Driver");
 
     // The existing row keeps all its data under the right headers.
-    expect(cell(migrated, "Type")).toBe("Pickup");
-    expect(cell(migrated, "Name")).toBe("Pat");
-    expect(cell(migrated, "Customer Instructions")).toBe("By the gate");
-    expect(cell(migrated, "Latitude")).toBe("45.4");
+    expect(cell(migrated, "Name")).toBe("Name 0");
+    expect(cell(migrated, "Customer Instructions")).toBe("Customer Instructions 0");
     expect(cell(migrated, "Driver")).toBe("Sam");
 
-    // The new row lines up with the migrated columns.
+    // The new row lines up with the new columns.
     expect(cell(added, "Square Order ID")).toBe("o1");
-    expect(cell(added, "Type")).toBe("Drop-off");
-    expect(cell(added, "Name")).toBe("Name o1");
+    expect(cell(added, "Heard About Us")).toBe("Email");
     expect(cell(added, "Driver")).toBe("");
   });
 
   it("writes by header name when volunteers reorder columns", async () => {
-    const header = [...SHEET_COLUMNS].reverse();
-    const tabs = fakeGoogle({ "2034": [header] });
-    await appendRequestRow(env, "2034", row("o1"));
-    const [h, added] = tabs.get("2034")!.rows;
+    const header = [...PICKUP_COLUMNS].reverse();
+    const tabs = fakeGoogle({ "2034 Pickups": [header] });
+    await appendRequestRow(env, "2034 Pickups", "pickup", row("o1"));
+    const [h, added] = tabs.get("2034 Pickups")!.rows;
     expect(added[h.indexOf("Square Order ID")]).toBe("o1");
     expect(added[h.indexOf("Name")]).toBe("Name o1");
   });
 
   it("does not add a second row for a repeated notification", async () => {
-    const tabs = fakeGoogle({ "2035 Test": [] });
-    await appendRequestRow(env, "2035 Test", row("o1"));
-    expect(await appendRequestRow(env, "2035 Test", row("o1"))).toBe(false);
-    expect(tabs.get("2035 Test")!.rows).toHaveLength(2);
+    const tabs = fakeGoogle({ "2035 Drop-offs Test": [] });
+    await appendRequestRow(env, "2035 Drop-offs Test", "dropoff", row("o1"));
+    expect(await appendRequestRow(env, "2035 Drop-offs Test", "dropoff", row("o1"))).toBe(false);
+    expect(tabs.get("2035 Drop-offs Test")!.rows).toHaveLength(2);
   });
 
-  it("leaves out coordinates", () => {
-    expect(SHEET_COLUMNS).not.toContain("Latitude");
-    expect(SHEET_COLUMNS).not.toContain("Longitude");
+  it("leaves out coordinates and the service type", () => {
+    for (const column of ["Latitude", "Longitude", "Type"]) {
+      expect(PICKUP_COLUMNS).not.toContain(column);
+    }
   });
 });

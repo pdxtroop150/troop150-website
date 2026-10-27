@@ -1,10 +1,10 @@
 // POST /tree-recycling/square-webhook
-// Square calls this when a payment changes. Once a website pickup payment is
-// COMPLETED, the request is added to the routing sheet. Responding with an
+// Square calls this when a payment changes. Once a website payment is
+// COMPLETED, the request is added to the sheet's pickup or drop-off tab. Responding with an
 // error makes Square retry, so failures return 500.
 import type { PagesFunction } from "@cloudflare/workers-types";
 import { json, type TreeRecyclingEnv } from "../../src/lib/treeRecycling/functionEnv";
-import { sheetTabName } from "../../src/lib/treeRecycling/settings";
+import { sheetTabName, type Service } from "../../src/lib/treeRecycling/settings";
 import { appendRequestRow } from "../../src/lib/treeRecycling/sheets";
 import {
   getOrder,
@@ -72,12 +72,14 @@ export const onRequestPost: PagesFunction<TreeRecyclingEnv> = async ({ request, 
     const donationCents = lines
       .filter((line) => line.metadata?.[LINE_KIND_KEY] === "donation")
       .reduce((total, line) => total + line.total_money.amount, 0);
-    // Real payments go on the season's tab and Sandbox payments on its test tab.
-    const added = await appendRequestRow(env, sheetTabName(isProduction(env)), {
+    // Orders from before drop-offs existed have no service; they were pickups.
+    const service: Service = m.service === "dropoff" ? "dropoff" : "pickup";
+    // Real payments go on the season's tabs and Sandbox payments on its test
+    // tabs. Columns a drop-off tab doesn't have are left out.
+    const tab = sheetTabName(isProduction(env), service);
+    const added = await appendRequestRow(env, tab, service, {
       "Square Order ID": order.id,
       "Paid At": payment.updated_at,
-      // Orders from before drop-offs existed have no service; they were pickups.
-      Type: m.service === "dropoff" ? "Drop-off" : "Pickup",
       Name: m.name ?? "",
       Email: m.email ?? "",
       Phone: m.phone ?? "",
@@ -94,7 +96,7 @@ export const onRequestPost: PagesFunction<TreeRecyclingEnv> = async ({ request, 
       "Heard About Us": m.referral ?? "",
       Notes: "",
     });
-    return json({ recorded: added ? "added" : "already recorded", orderId: order.id });
+    return json({ recorded: added ? "added" : "already recorded", tab, orderId: order.id });
   } catch (error) {
     console.error("Recording payment failed", error);
     return json({ error: "Recording failed" }, 500);
