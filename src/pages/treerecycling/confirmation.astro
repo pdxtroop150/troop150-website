@@ -1,0 +1,83 @@
+---
+// Square sends customers here after they pay for a pickup or drop-off.
+import Base from "@/layouts/Base.astro";
+import { settings } from "@/lib/treeRecycling/settings";
+---
+
+<Base title="Tree Recycling Confirmed" noindex>
+  <section class="section">
+    <div class="container">
+      <h1 class="h2 page-heading">Thank you!</h1>
+      <div class="content">
+        <p>
+          Your tree recycling request is complete. Square is emailing your
+          receipt now.
+        </p>
+        <p id="tree-request-pickup" hidden>
+          Please put your <strong data-field="items"></strong> by your curb at
+          <strong data-field="address"></strong> by
+          <strong>{settings.curbDeadlineLabel}</strong> for pickup, with lights,
+          ornaments, tinsel, and stands removed.
+          {settings.collectionDateNote}
+        </p>
+        <p id="tree-request-dropoff" hidden>
+          Please bring your <strong data-field="items"></strong> to
+          <strong>{settings.dropOffLocation}</strong> ({settings.dropOffAddress})
+          from {settings.dropOffHours},
+          <strong>{settings.dropOffDatesLabel}</strong>, with lights, ornaments,
+          tinsel, and stands removed, and show your receipt at the lot.
+        </p>
+        <p id="tree-request-general">
+          Your receipt says when and where to put out or bring your trees and
+          wreaths.
+        </p>
+        <p>
+          Questions? Email <a href={`mailto:${settings.supportEmail}`}
+            >{settings.supportEmail}</a
+          >. Thank you for supporting Troop 150!
+        </p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import {
+    CONFIRMATION_STORAGE_KEY,
+    CONFIRMATION_STORAGE_MS,
+  } from "@/lib/treeRecycling/settings";
+
+  function showDetails() {
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem(CONFIRMATION_STORAGE_KEY) ?? "null",
+      );
+      if (!saved) {
+        return;
+      }
+      // Don't keep an address around on a shared computer.
+      if (!(Date.now() - saved.savedAt < CONFIRMATION_STORAGE_MS)) {
+        localStorage.removeItem(CONFIRMATION_STORAGE_KEY);
+        return;
+      }
+      // Requests saved before drop-offs existed were all pickups.
+      const service = saved.service === "dropoff" ? "dropoff" : "pickup";
+      const details = document.getElementById(`tree-request-${service}`);
+      if (!details) {
+        return;
+      }
+      const set = (field: string, text: string) => {
+        const el = details.querySelector(`[data-field="${field}"]`);
+        if (el) el.textContent = text;
+      };
+      set("items", saved.items);
+      set("address", saved.address);
+      details.hidden = false;
+      document.getElementById("tree-request-general")?.setAttribute("hidden", "");
+    } catch {
+      // Without saved details, the general message is enough.
+    }
+  }
+
+  document.addEventListener("astro:page-load", showDetails);
+</script>

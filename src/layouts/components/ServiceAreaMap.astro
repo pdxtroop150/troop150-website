@@ -1,0 +1,101 @@
+---
+// The pickup area map, regenerated with scripts/build-service-area.py --image.
+// The page shows a small version; clicking it opens the full-resolution image
+// in an overlay that closes with its close button, Escape, or a click outside it.
+import { Image, getImage } from "astro:assets";
+import map from "@/assets/tree-recycling-service-area.jpg";
+import { IoClose } from "react-icons/io5";
+
+const alt = "Map of Troop 150's curbside pickup area in SW and NW Portland, with ZIP codes";
+const full = await getImage({ src: map, format: "webp", quality: 75 });
+---
+
+<figure class="my-6" data-service-area-map>
+  <a href={full.src} class="block cursor-zoom-in" aria-label="Open a larger map">
+    <Image
+      src={map}
+      alt={alt}
+      widths={[480, 720, 960, 1440]}
+      sizes="(min-width: 768px) 480px, 100vw"
+      format="webp"
+      class="mx-auto block w-full max-w-[480px] rounded border border-border"
+    />
+  </a>
+  <dialog
+    class="m-0 h-full max-h-none w-full max-w-none bg-black p-0 backdrop:bg-black"
+    aria-label="Pickup area map"
+  >
+    <div class="flex h-full w-full overflow-auto p-4" data-scroller>
+      <img
+        data-src={full.src}
+        alt={alt}
+        width={full.attributes.width}
+        height={full.attributes.height}
+        class="m-auto block h-auto max-h-full w-auto max-w-full shrink-0 cursor-zoom-in"
+      />
+    </div>
+    <button
+      type="button"
+      class="fixed right-4 top-4 flex h-12 w-12 items-center justify-center rounded-full bg-white text-black shadow-lg hover:bg-gray-200"
+      aria-label="Close map"
+      data-close
+    >
+      <IoClose className="h-7 w-7" aria-hidden="true" />
+    </button>
+    <p
+      class="pointer-events-none fixed bottom-4 left-1/2 m-0 -translate-x-1/2 rounded-full bg-white/90 px-4 py-1 text-sm text-black"
+      data-hint
+    >
+      Click the map to zoom
+    </p>
+  </dialog>
+</figure>
+
+<script>
+  for (const figure of document.querySelectorAll<HTMLElement>("[data-service-area-map]")) {
+    const link = figure.querySelector("a")!;
+    const dialog = figure.querySelector("dialog")!;
+    const scroller = dialog.querySelector<HTMLElement>("[data-scroller]")!;
+    const image = scroller.querySelector("img")!;
+    const hint = dialog.querySelector<HTMLElement>("[data-hint]")!;
+    let zoomed = false;
+
+    const setZoom = (zoom: boolean, event?: MouseEvent) => {
+      zoomed = zoom;
+      // Fit to the screen, or show at full resolution and scroll to the
+      // spot that was clicked.
+      const fraction = event && {
+        x: event.offsetX / image.clientWidth,
+        y: event.offsetY / image.clientHeight,
+      };
+      image.classList.toggle("max-h-full", !zoom);
+      image.classList.toggle("max-w-full", !zoom);
+      image.classList.toggle("max-w-none", zoom);
+      image.classList.toggle("cursor-zoom-in", !zoom);
+      image.classList.toggle("cursor-zoom-out", zoom);
+      const verb = matchMedia("(pointer: coarse)").matches ? "Tap" : "Click";
+      hint.textContent = zoom ? `${verb} to fit the screen` : `${verb} the map to zoom`;
+      if (zoom && fraction) {
+        scroller.scrollLeft = fraction.x * scroller.scrollWidth - scroller.clientWidth / 2;
+        scroller.scrollTop = fraction.y * scroller.scrollHeight - scroller.clientHeight / 2;
+      }
+    };
+
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      image.src ||= image.dataset.src!;
+      setZoom(false);
+      dialog.showModal();
+      document.documentElement.style.overflow = "hidden";
+    });
+    dialog.addEventListener("close", () => {
+      document.documentElement.style.overflow = "";
+    });
+    dialog.querySelector("[data-close]")!.addEventListener("click", () => dialog.close());
+    image.addEventListener("click", (event) => setZoom(!zoomed, event));
+    // Clicks on the dark area around the map close it.
+    scroller.addEventListener("click", (event) => {
+      if (event.target === scroller) dialog.close();
+    });
+  }
+</script>

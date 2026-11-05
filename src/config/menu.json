@@ -27,7 +27,8 @@
         },
         {
           "name": "Tree Recycling",
-          "url": "/treerecycling"
+          "url": "/treerecycling",
+          "promoteWhileTreeRequestsOpen": true
         },
         {
           "name": "Online Resources",
