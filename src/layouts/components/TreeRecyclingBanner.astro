@@ -1,0 +1,49 @@
+---
+// A link to tree recycling at the top of the homepage while requests are
+// open, so phone visitors find it without opening the menu.
+import { formClosesAt, settings } from "@/lib/treeRecycling/settings";
+import { IoChevronForward } from "react-icons/io5";
+import { PiTreeEvergreenFill } from "react-icons/pi";
+
+const closesAt = formClosesAt();
+const pickupClosesAt = settings.requestDeadlineAt;
+// The site is static, so the script below re-decides in the browser.
+const now = Date.now();
+const open = now <= closesAt;
+const pickupOpen = now <= pickupClosesAt;
+---
+
+<div
+  class:list={["container pt-6", { hidden: !open }]}
+  data-tree-banner
+  data-closes-at={closesAt}
+  data-pickup-closes-at={pickupClosesAt}
+>
+  <a
+    href="/treerecycling"
+    class="flex items-center gap-3 rounded-lg border border-border bg-theme-light px-4 py-3 text-dark no-underline transition hover:border-primary"
+  >
+    <PiTreeEvergreenFill className="h-8 w-8 shrink-0 text-primary" aria-hidden="true" />
+    <span class="min-w-0 flex-1">
+      <span class="block font-semibold leading-snug">Christmas tree and wreath recycling</span>
+      <span class:list={["block text-sm", { hidden: !pickupOpen }]} data-pickup-open>
+        Request curbside pickup or prepay for drop-off.
+      </span>
+      <span class:list={["block text-sm", { hidden: pickupOpen }]} data-pickup-closed>
+        Prepay for drop-off, weekends {settings.dropOffShortDatesLabel}.
+      </span>
+    </span>
+    <IoChevronForward className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+  </a>
+</div>
+
+<script is:inline>
+  // Hide the banner once requests close, and the pickup line once pickup
+  // requests close, even on a page built before then.
+  for (const banner of document.querySelectorAll("[data-tree-banner]")) {
+    const pickupOpen = Date.now() <= Number(banner.dataset.pickupClosesAt);
+    banner.classList.toggle("hidden", Date.now() > Number(banner.dataset.closesAt));
+    banner.querySelector("[data-pickup-open]").classList.toggle("hidden", !pickupOpen);
+    banner.querySelector("[data-pickup-closed]").classList.toggle("hidden", pickupOpen);
+  }
+</script>
