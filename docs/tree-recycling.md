@@ -334,12 +334,13 @@ it was called on.
 
 ### Accounts
 
-- **Square:** the troop's Square account (production) and a Square developer
-  account with an application (Sandbox and production credentials, webhook
-  subscriptions). On the troop's free Square plan, adding a team member with a
-  custom permission set required upgrading, so production credentials and the
-  production webhook are set up by the account owner, and Sandbox work can use
-  a separate developer account. Receipt email settings are in the Square
+- **Square:** one application in the Square Developer Console, created inside
+  the troop's Square account by a team member signed in to it. Its Sandbox side
+  serves local development and the preview; its Production side holds the
+  production access token, the troop's location ID, and the production webhook
+  (see [Square production webhook](#square-production-webhook)). Because the
+  app belongs to the troop's account, its production token takes payments into
+  that account and doesn't expire. Receipt email settings are in the Square
   Dashboard.
 - **Google Cloud project `troop150-website`:** Address Validation API and
   Google Sheets API enabled, billing with a budget alert, one API key, and one
@@ -358,6 +359,14 @@ Cloudflare keeps that address pointed at the branch's latest build, so it never
 needs updating as long as season work happens on that branch. Its signature
 key is the Preview `SQUARE_WEBHOOK_SIGNATURE_KEY`. Keep just one Sandbox
 subscription, since Preview holds only one key.
+
+#### Square production webhook
+
+In the same application, switched to **Production**, **Webhooks →
+Subscriptions** has one subscription for `payment.updated` pointing at
+`https://troop150.org/tree-recycling/square-webhook` (not `www.`, which
+redirects, and Square doesn't follow redirects). Its signature key is the
+Production `SQUARE_WEBHOOK_SIGNATURE_KEY`.
 
 #### Preview access
 

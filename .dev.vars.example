@@ -1,5 +1,5 @@
 # Copy to .dev.vars (git-ignored) for local development with ./run-wrangler.sh.
-# Local development always uses Square Sandbox and the "<year> Test" sheet tab.
+# Local development always uses Square Sandbox and the "<year> … Test" sheet tabs.
 # See docs/tree-recycling.md.
 
 # Square Sandbox credentials. (Leave SQUARE_ENVIRONMENT unset; only the
@@ -16,7 +16,8 @@ GOOGLE_MAPS_API_KEY=
 
 # The test service account's JSON key on one line, in single quotes.
 GOOGLE_SERVICE_ACCOUNT='{"type":"service_account","client_email":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"}'
-# Rows go on the "<year> Test" tab here (the year comes from collectionDate in
-# src/config/treeRecycling.json); production uses the "<year>" tab.
+# Rows go on the "<year> Pickups Test" and "<year> Drop-offs Test" tabs here
+# (the year comes from collectionDate in src/config/treeRecycling.json);
+# production uses "<year> Pickups" and "<year> Drop-offs".
 TREE_SHEET_ID=
 
